@@ -1073,8 +1073,8 @@ function importarBackup(e){
   reader.readAsText(file);
 }
 // ──────────────────────────────────────────────────────────────
-
-(id,e){if(e.target===document.getElementById(id))cerrar(id);}
+function cerrarClickFuera(id,e)
+{if(e.target===document.getElementById(id))cerrar(id);} 
 init();
 </script>
 </body>
