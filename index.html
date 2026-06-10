@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Órdenes de Preparación · La Llave</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg:#F0F4FA;
+  --surface:#fff;
+  --border:#DDE3EE;
+  --text:#1A2233;
+  --text2:#4A5878;
+  --text3:#8A96B0;
+  --accent:#1E56C8;
+  --accent2:#2C7BE5;
+  --r:8px; --rlg:12px;
+
+  /* alertas */
+  --danger:#C92B2B; --danger-bg:#FFF0F0; --danger-border:#F5C0C0; --danger-txt:#7A1212;
+  --warn:#D47800;   --warn-bg:#FFF8EC;   --warn-border:#FAD890;   --warn-txt:#7A4400;
+  --caut:#B8A000;   --caut-bg:#FFFCEA;   --caut-border:#EFE070;   --caut-txt:#5A4800;
+  --ok:#1E9A42;     --ok-bg:#EDFAF2;     --ok-border:#90DBA8;     --ok-txt:#0A5020;
+
+  /* transportes */
+  --sernea:#1760B8;   --sernea-bg:#E6F0FF;   --sernea-border:#90B8F0;
+  --niclis:#B04800;   --niclis-bg:#FFF0E0;   --niclis-border:#F0C090;
+  --propio:#0E7848;   --propio-bg:#E6F8EE;   --propio-border:#80D8A8;
+  --sin:#5A5A7A;      --sin-bg:#F0F0F8;      --sin-border:#C0C0D8;
+
+  /* express */
+  --express:#7B3FBB; --express-bg:#F5EEFF; --express-border:#C9A0F0; --express-txt:#4A1A88;
+
+  /* estados */
+  --st-ing:#1A3A9A;   --st-ing-bg:#EBF1FF;
+  --st-pre:#8A3800;   --st-pre-bg:#FFF0DC;
+  --st-ctrl:#0A5820;  --st-ctrl-bg:#E4F8EC;
+  --st-comp:#0A6028;  --st-comp-bg:#D8F8E8;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh;}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#0D2B6E 0%,#1A4FA8 60%,#2C7BE5 100%);padding:0 28px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 12px rgba(13,43,110,.25);}
+.hdr-brand{display:flex;align-items:center;gap:12px;}
+.hdr-icon{width:38px;height:38px;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.35);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;}
+.hdr-title{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.01em;}
+.hdr-sub{font-size:11px;color:rgba(255,255,255,.65);margin-top:1px;}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.cloud-pill{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:#90F0B8;background:rgba(255,255,255,.12);border:1px solid rgba(144,240,184,.35);padding:4px 11px;border-radius:20px;}
+.btn-new{background:#fff;color:#1A4FA8;border:none;border-radius:var(--r);padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,.12);transition:all .15s;}
+.btn-new:hover{background:#EBF1FF;transform:translateY(-1px);}
+
+/* MAIN */
+.main{padding:22px 28px;max-width:1700px;margin:0 auto;}
+
+/* BANNER */
+.banner{display:flex;align-items:center;gap:10px;padding:11px 16px;border-radius:var(--r);font-size:13px;font-weight:600;margin-bottom:18px;border-left:4px solid;}
+.banner.danger{background:var(--danger-bg);border-color:var(--danger);color:var(--danger-txt);}
+.banner.warn{background:var(--warn-bg);border-color:var(--warn);color:var(--warn-txt);}
+.banner svg{flex-shrink:0;}
+
+/* MÉTRICAS */
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);padding:16px 18px;border-top:3px solid var(--border);}
+.mc.total{border-top-color:#1A4FA8;}
+.mc.danger{border-top-color:var(--danger);}
+.mc.warn{border-top-color:var(--warn);}
+.mc.ok{border-top-color:var(--ok);}
+.mc.ctrl{border-top-color:#7B3FBB;}
+.mc-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:6px;}
+.mc-val{font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1;}
+.mc.total .mc-val{color:#1A4FA8;}
+.mc.danger .mc-val{color:var(--danger);}
+.mc.warn .mc-val{color:var(--warn);}
+.mc.ok .mc-val{color:var(--ok);}
+.mc.ctrl .mc-val{color:#7B3FBB;}
+
+/* LEYENDAS */
+.leyenda-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:9px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;}
+.ley-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-right:4px;}
+.ley-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);}
+.ley-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.t-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;border:1px solid;}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+.sw{flex:1;min-width:220px;position:relative;}
+.sw svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);}
+.si{width:100%;padding:9px 12px 9px 33px;font-size:13px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s;}
+.si:focus{border-color:var(--accent2);}
+.fsel{padding:9px 12px;font-size:12px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);outline:none;cursor:pointer;font-weight:500;}
+.fsel:focus{border-color:var(--accent2);}
+
+/* TABLA */
+.tcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.05);}
+.tscroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead{background:linear-gradient(180deg,#1A3A7A 0%,#152F68 100%);}
+th{padding:11px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.75);white-space:nowrap;border-right:1px solid rgba(255,255,255,.08);}
+th:last-child{border-right:none;}
+tbody tr{border-bottom:1px solid #EEF2FA;cursor:pointer;transition:background .1s;}
+tbody tr:nth-child(even){background:#FAFBFE;}
+tbody tr:hover{background:#EFF4FF!important;}
+tbody tr:last-child{border-bottom:none;}
+td{padding:10px 10px;vertical-align:middle;white-space:nowrap;border-right:1px solid #F0F3FA;}
+td:last-child{border-right:none;}
+.td-bar{width:5px;padding:0!important;border-right:none!important;}
+.bar{width:5px;min-height:44px;display:block;}
+
+/* Tiempo badge */
+.tbadge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 9px;border-radius:20px;border:1px solid;}
+.tb-danger{background:var(--danger-bg);color:var(--danger);border-color:var(--danger-border);}
+.tb-warn{background:var(--warn-bg);color:var(--warn);border-color:var(--warn-border);}
+.tb-caut{background:var(--caut-bg);color:var(--caut);border-color:var(--caut-border);}
+.tb-ok{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-border);}
+.td{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+
+/* Estado chip */
+.ep{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;border:1px solid;}
+.ep-ing{background:var(--st-ing-bg);color:var(--st-ing);border-color:#B0C8FF;}
+.ep-pre{background:var(--st-pre-bg);color:var(--st-pre);border-color:#F0C880;}
+.ep-ctrl{background:var(--st-ctrl-bg);color:var(--st-ctrl);border-color:#80D8A8;}
+.ep-comp{background:var(--st-comp-bg);color:var(--st-comp);border-color:#60D890;}
+
+/* Transporte chip */
+.tc{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;border:1px solid;white-space:nowrap;}
+.tc-sernea{background:var(--sernea-bg);color:var(--sernea);border-color:var(--sernea-border);}
+.tc-niclis{background:var(--niclis-bg);color:var(--niclis);border-color:var(--niclis-border);}
+.tc-propio{background:var(--propio-bg);color:var(--propio);border-color:var(--propio-border);}
+.tc-sin{background:var(--sin-bg);color:var(--sin);border-color:var(--sin-border);}
+
+.ctrl-cell{font-weight:700;font-size:11px;color:#1A4FA8;}
+.picker-cell{font-weight:600;font-size:11px;color:#B04800;}
+.num-bold{font-weight:800;font-size:13px;color:#1A2233;}
+.ciudad-cell{font-size:11px;color:var(--text2);}
+.tipo-norm{font-size:10px;font-weight:600;color:#3A4A6B;background:#EEF2FA;padding:3px 8px;border-radius:20px;border:1px solid #D0D8F0;}
+.tipo-licit{font-size:10px;font-weight:600;color:#7A4400;background:#FFF0DC;padding:3px 8px;border-radius:20px;border:1px solid #F0C880;}
+.hora-cell{font-size:11px;color:#4A5878;font-weight:500;}
+.empty-td{text-align:center;padding:52px!important;color:var(--text3);font-size:13px;}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(8,18,50,.55);z-index:200;align-items:center;justify-content:center;padding:20px;}
+.overlay.open{display:flex;}
+.mbox{background:var(--surface);border-radius:var(--rlg);max-width:600px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.mhdr{background:linear-gradient(135deg,#0D2B6E,#1A4FA8);padding:20px 24px;border-radius:var(--rlg) var(--rlg) 0 0;display:flex;align-items:flex-start;justify-content:space-between;}
+.mtitle{font-size:16px;font-weight:700;color:#fff;}
+.msub{font-size:12px;color:rgba(255,255,255,.6);margin-top:3px;}
+.xbtn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;}
+.xbtn:hover{background:rgba(255,255,255,.25);}
+.mbody{padding:22px 24px;}
+
+/* FORM */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg.full{grid-column:1/-1;}
+.fg.third{grid-column:span 1;}
+.flbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);}
+.finp,.fsel2,.ftxt{padding:9px 12px;font-size:13px;border:1.5px solid var(--border);border-radius:var(--r);background:#FAFBFE;color:var(--text);outline:none;font-family:inherit;width:100%;transition:border-color .15s;}
+.finp:focus,.fsel2:focus,.ftxt:focus{border-color:var(--accent2);background:#fff;}
+.ftxt{resize:vertical;min-height:60px;}
+
+.sec-box{background:#F5F8FF;border:1.5px solid #D0DCFF;border-radius:var(--r);padding:14px;margin-top:14px;}
+.sec-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#1A4FA8;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.sec-box.orange{background:#FFF8F0;border-color:#F0C880;}
+.sec-box.orange .sec-title{color:#B04800;}
+
+.factions{display:flex;gap:10px;margin-top:18px;}
+.btn-save{background:linear-gradient(135deg,#1A4FA8,#2C7BE5);color:#fff;border:none;border-radius:var(--r);padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 3px 12px rgba(26,79,168,.3);}
+.btn-save:hover{box-shadow:0 5px 18px rgba(26,79,168,.4);transform:translateY(-1px);}
+.btn-cancel{background:none;border:1.5px solid var(--border);color:var(--text2);border-radius:var(--r);padding:10px 16px;font-size:13px;font-weight:500;cursor:pointer;}
+.btn-cancel:hover{background:var(--bg);}
+
+/* DETALLE */
+.drow{display:grid;grid-template-columns:140px 1fr;gap:8px;font-size:13px;padding:9px 0;border-bottom:1px solid #F0F4FA;}
+.drow:last-child{border-bottom:none;}
+.dlbl{color:var(--text3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
+.dval{color:var(--text);font-weight:600;}
+
+@media(max-width:900px){
+  .metrics{grid-template-columns:repeat(3,1fr);}
+  .hdr{padding:0 14px;}
+  .main{padding:14px;}
+  .fgrid{grid-template-columns:1fr;}
+  .fg.full,.fg.third{grid-column:1;}
+}
+
+/* IMPORTAR EXCEL */
+.btn-import{background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.35);color:#fff;border-radius:var(--r);padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;}
+.btn-import:hover{background:rgba(255,255,255,.25);}
+.import-panel{background:var(--surface);border:2px dashed var(--accent2);border-radius:var(--rlg);padding:20px 24px;margin-bottom:18px;display:none;}
+.import-panel.open{display:block;}
+.import-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;}
+.import-box{border:1.5px solid var(--border);border-radius:var(--r);padding:14px;background:#FAFBFE;}
+.import-box-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.import-box-title.ok{color:var(--ok);}
+.file-drop{border:2px dashed var(--border);border-radius:var(--r);padding:18px;text-align:center;cursor:pointer;transition:all .15s;position:relative;}
+.file-drop:hover,.file-drop.drag{border-color:var(--accent2);background:#EBF1FF;}
+.file-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.file-drop-icon{font-size:24px;margin-bottom:6px;}
+.file-drop-text{font-size:12px;color:var(--text3);font-weight:500;}
+.file-loaded{font-size:11px;font-weight:700;color:var(--ok);margin-top:6px;display:flex;align-items:center;gap:4px;}
+.btn-procesar{background:linear-gradient(135deg,#1A4FA8,#2C7BE5);color:#fff;border:none;border-radius:var(--r);padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;box-shadow:0 3px 12px rgba(26,79,168,.3);}
+.btn-procesar:hover{box-shadow:0 5px 18px rgba(26,79,168,.4);transform:translateY(-1px);}
+.btn-procesar:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.import-status{font-size:12px;font-weight:600;padding:8px 12px;border-radius:var(--r);margin-top:10px;display:none;}
+.import-status.ok{background:var(--ok-bg);color:var(--ok-txt);border:1px solid var(--ok-border);display:block;}
+.import-status.err{background:var(--danger-bg);color:var(--danger-txt);border:1px solid var(--danger-border);display:block;}
+
+/* EXPRESS badge */
+.express-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;background:var(--express-bg);color:var(--express);border:1px solid var(--express-border);letter-spacing:.02em;}
+tr.express-row{background:#FAF4FF!important;}
+tr.express-row:hover{background:#F0E8FF!important;}
+
+/* REPORTE button */
+.btn-report{background:rgba(123,63,187,.25);border:1.5px solid rgba(200,160,240,.5);color:#E0C8FF;border-radius:var(--r);padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;}
+.btn-report:hover{background:rgba(123,63,187,.4);}
+
+/* MODAL REPORTE */
+.rep-header{background:linear-gradient(135deg,#4A1A88,#7B3FBB);padding:20px 24px;border-radius:var(--rlg) var(--rlg) 0 0;display:flex;align-items:flex-start;justify-content:space-between;}
+.rep-section{margin-bottom:20px;}
+.rep-section-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#7B3FBB;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #EEE8FF;}
+.rep-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.rep-card{background:#F8F5FF;border:1px solid #DDD0FF;border-radius:var(--r);padding:12px;text-align:center;}
+.rep-card-val{font-size:22px;font-weight:800;color:#7B3FBB;}
+.rep-card-lbl{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;margin-top:3px;}
+.rep-table{width:100%;border-collapse:collapse;font-size:12px;}
+.rep-table th{background:#F0EAFF;color:#4A1A88;font-size:10px;font-weight:700;text-transform:uppercase;padding:7px 10px;text-align:left;border-bottom:1px solid #DDD0FF;}
+.rep-table td{padding:7px 10px;border-bottom:1px solid #F5F0FF;color:var(--text);}
+.rep-table tr:last-child td{border-bottom:none;}
+.btn-dl{background:linear-gradient(135deg,#4A1A88,#7B3FBB);color:#fff;border:none;border-radius:var(--r);padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;}
+.btn-dl:hover{opacity:.9;}
+.btn-backup{background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.25);color:rgba(255,255,255,.75);border-radius:var(--r);padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s;}
+.btn-backup:hover{background:rgba(255,255,255,.2);}
+.backup-file{display:none;}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-icon">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg>
+    </div>
+    <div>
+      <div class="hdr-title">Órdenes de Preparación</div>
+      <div class="hdr-sub">Depósito Ruta 11 · La Llave</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="cloud-pill">
+      <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+      Guardado en la nube
+    </div>
+    <button class="btn-backup" onclick="exportarBackup()" title="Exportar backup de datos">
+      <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Backup
+    </button>
+    <button class="btn-backup" onclick="document.getElementById('input-backup').click()" title="Restaurar backup">
+      <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Restaurar
+    </button>
+    <input type="file" id="input-backup" class="backup-file" accept=".json" onchange="importarBackup(event)">
+    <button class="btn-report" onclick="abrirReporte()">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Reporte semanal
+    </button>
+    <button class="btn-import" onclick="toggleImport()">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Importar Excel
+    </button>
+    <button class="btn-new" onclick="abrirNuevo()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nueva orden
+    </button>
+  </div>
+</header>
+
+<main class="main">
+  <!-- PANEL IMPORTAR EXCEL -->
+  <div class="import-panel" id="import-panel">
+    <div style="font-size:14px;font-weight:800;color:#1A2233;margin-bottom:4px;display:flex;align-items:center;gap:8px;">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Importar desde Excel
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:14px;">Cargá los dos archivos del día y la plataforma calcula automáticamente los ítems y unidades.</div>
+    <div class="import-grid">
+      <div class="import-box">
+        <div class="import-box-title" id="title-ord">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          1 · Listado de Órdenes
+        </div>
+        <div class="file-drop" id="drop-ord" ondragover="onDrag(event,'drop-ord')" ondragleave="offDrag('drop-ord')" ondrop="onDrop(event,'ord')">
+          <input type="file" accept=".xlsx,.xls" onchange="cargarArchivo(event,'ord')">
+          <div class="file-drop-icon">📋</div>
+          <div class="file-drop-text">Arrastrá o hacé clic<br><strong>Listado_de_Orden_preparacion_...</strong></div>
+        </div>
+        <div class="file-loaded" id="loaded-ord" style="display:none">✅ <span id="loaded-ord-name"></span></div>
+      </div>
+      <div class="import-box">
+        <div class="import-box-title" id="title-items">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          2 · Listado de Ítems
+        </div>
+        <div class="file-drop" id="drop-items" ondragover="onDrag(event,'drop-items')" ondragleave="offDrag('drop-items')" ondrop="onDrop(event,'items')">
+          <input type="file" accept=".xlsx,.xls" onchange="cargarArchivo(event,'items')">
+          <div class="file-drop-icon">📦</div>
+          <div class="file-drop-text">Arrastrá o hacé clic<br><strong>Listado_de_Item_orden_preparacion_...</strong></div>
+        </div>
+        <div class="file-loaded" id="loaded-items" style="display:none">✅ <span id="loaded-items-name"></span></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="btn-procesar" id="btn-procesar" onclick="procesarExcels()" disabled>
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Procesar y actualizar tabla
+      </button>
+      <button class="btn-cancel" onclick="toggleImport()">Cancelar</button>
+    </div>
+    <div class="import-status" id="import-status"></div>
+  </div>
+
+  <div id="banner-wrap"></div>
+
+  <div class="metrics">
+    <div class="mc total"><div class="mc-lbl">Total órdenes</div><div class="mc-val" id="m-total">—</div></div>
+    <div class="mc danger"><div class="mc-lbl">Vencidas +72 hs</div><div class="mc-val" id="m-venc">—</div></div>
+    <div class="mc warn"><div class="mc-lbl">Por vencer</div><div class="mc-val" id="m-warn">—</div></div>
+    <div class="mc ok"><div class="mc-lbl">Al día</div><div class="mc-val" id="m-ok">—</div></div>
+    <div class="mc ctrl"><div class="mc-lbl">Controladores</div><div class="mc-val" id="m-ctrl">—</div></div>
+  </div>
+
+  <div class="leyenda-row">
+    <span class="ley-lbl">Alertas</span>
+    <span class="ley-item"><span class="ley-dot" style="background:var(--danger)"></span>Vencida (+72 hs)</span>
+    <span class="ley-item"><span class="ley-dot" style="background:var(--warn)"></span>Crítica (48–72 hs)</span>
+    <span class="ley-item"><span class="ley-dot" style="background:var(--caut)"></span>Atención (24–48 hs)</span>
+    <span class="ley-item"><span class="ley-dot" style="background:var(--ok)"></span>Al día (−24 hs)</span>
+  </div>
+
+  <div class="leyenda-row" id="transp-legend">
+    <span class="ley-lbl">Transportes</span>
+  </div>
+
+  <div class="toolbar">
+    <div class="sw">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="si" id="buscar" type="text" placeholder="Buscar cliente, orden, ciudad, picker, controlador…" oninput="renderTable()">
+    </div>
+    <select class="fsel" id="f-estado" onchange="renderTable()">
+      <option value="">Todos los estados</option>
+      <option value="Ingresada">Ingresada</option>
+      <option value="En preparación">En preparación</option>
+      <option value="En control">En control</option>
+      <option value="Completada">Completada</option>
+    </select>
+    <select class="fsel" id="f-alerta" onchange="renderTable()">
+      <option value="">Todas las alertas</option>
+      <option value="vencida">Vencidas +72 hs</option>
+      <option value="critica">Críticas 48–72 hs</option>
+      <option value="atencion">Atención 24–48 hs</option>
+      <option value="ok">Al día</option>
+    </select>
+    <select class="fsel" id="f-ctrl" onchange="renderTable()"><option value="">Todos los controladores</option></select>
+    <select class="fsel" id="f-transp" onchange="renderTable()"><option value="">Todos los transportes</option></select>
+  </div>
+
+  <div class="tcard">
+    <div class="tscroll">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:5px;padding:0;"></th>
+            <th>N° Orden</th>
+            <th>N° Pedido</th>
+            <th>Fecha creación</th>
+            <th>Tiempo</th>
+            <th>Estado</th>
+            <th>Cliente</th>
+            <th>Transporte</th>
+            <th>Ciudad</th>
+            <th>Ítems</th>
+            <th>Unidad</th>
+            <th>Picker</th>
+            <th>Fecha picker</th>
+            <th>Inicio picker</th>
+            <th>Fin picker</th>
+            <th>Vendedor</th>
+            <th>Controlador</th>
+            <th>Fecha ctrl.</th>
+            <th>Inicio ctrl.</th>
+            <th>Fin ctrl.</th>
+            <th>Tipo</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- MODAL NUEVA ORDEN -->
+<div class="overlay" id="mod-nuevo" onclick="cerrarOv('mod-nuevo',event)">
+  <div class="mbox">
+    <div class="mhdr">
+      <div><div class="mtitle">Nueva orden de preparación</div><div class="msub">Campos marcados con * son obligatorios</div></div>
+      <button class="xbtn" onclick="cerrar('mod-nuevo')">×</button>
+    </div>
+    <div class="mbody">
+      <div class="fgrid">
+        <div class="fg"><label class="flbl">N° Orden *</label><input class="finp" id="nn-num" type="number" placeholder="32999"></div>
+        <div class="fg"><label class="flbl">N° Pedido</label><input class="finp" id="nn-ped" type="number" placeholder="28200"></div>
+        <div class="fg full"><label class="flbl">Cliente *</label><input class="finp" id="nn-cli" type="text" placeholder="Nombre completo del cliente"></div>
+        <div class="fg"><label class="flbl">Transporte</label>
+          <select class="fsel2" id="nn-trans">
+            <option value="">Sin asignar</option>
+            <option value="Ser Nea">Ser Nea</option>
+            <option value="Niclis">Niclis</option>
+            <option value="Propio">Propio</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="fg"><label class="flbl">Ciudad</label><input class="finp" id="nn-ciudad" type="text" placeholder="RESISTENCIA"></div>
+        <div class="fg"><label class="flbl">Cant. ítems</label><input class="finp" id="nn-items" type="number" placeholder="0"></div>
+        <div class="fg"><label class="flbl">Unidad</label><input class="finp" id="nn-unidad" type="text" placeholder="Caja / Bulto / Unid."></div>
+        <div class="fg"><label class="flbl">Tipo operación</label>
+          <select class="fsel2" id="nn-tipo">
+            <option>Normal</option>
+            <option>Normal Modifica Precios</option>
+            <option>Licitacion</option>
+          </select>
+        </div>
+      </div>
+      <div class="sec-box orange">
+        <div class="sec-title">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          Picker
+        </div>
+        <div class="fgrid" style="grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
+          <div class="fg" style="grid-column:1/-1"><label class="flbl">Nombre del picker *</label><input class="finp" id="nn-picker" type="text" placeholder="Nombre completo"></div>
+          <div class="fg"><label class="flbl">Fecha picker</label><input class="finp" id="nn-fechaP" type="date"></div>
+          <div class="fg"><label class="flbl">Hora inicio</label><input class="finp" id="nn-inicioP" type="time"></div>
+          <div class="fg"><label class="flbl">Hora fin</label><input class="finp" id="nn-finP" type="time"></div>
+        </div>
+      </div>
+      <div class="sec-box">
+        <div class="sec-title">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Controlador
+        </div>
+        <div class="fgrid" style="grid-template-columns:1fr 1fr 1fr;gap:10px;">
+          <div class="fg" style="grid-column:1/-1"><label class="flbl">Nombre del controlador *</label><input class="finp" id="nn-ctrl" type="text" placeholder="Nombre completo"></div>
+          <div class="fg"><label class="flbl">Hora inicio</label><input class="finp" id="nn-inicioC" type="time"></div>
+          <div class="fg"><label class="flbl">Hora fin</label><input class="finp" id="nn-finC" type="time"></div>
+        </div>
+      </div>
+      <div class="fg full" style="margin-top:12px;"><label class="flbl">Observaciones</label><textarea class="ftxt" id="nn-obs" placeholder="Notas adicionales…"></textarea></div>
+      <div class="factions">
+        <button class="btn-save" onclick="guardarNuevo()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+          Guardar orden
+        </button>
+        <button class="btn-cancel" onclick="cerrar('mod-nuevo')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE -->
+<div class="overlay" id="mod-det" onclick="cerrarOv('mod-det',event)">
+  <div class="mbox">
+    <div class="mhdr" id="det-hdr">
+      <div><div class="mtitle" id="det-title">Detalle</div><div class="msub" id="det-sub"></div></div>
+      <button class="xbtn" onclick="cerrar('mod-det')">×</button>
+    </div>
+    <div class="mbody" id="det-body"></div>
+  </div>
+</div>
+
+<!-- MODAL REPORTE SEMANAL -->
+<div class="overlay" id="mod-reporte" onclick="cerrarOv('mod-reporte',event)">
+  <div class="mbox" style="max-width:720px;">
+    <div class="rep-header">
+      <div>
+        <div class="mtitle" id="rep-title">Reporte Semanal</div>
+        <div class="msub" id="rep-sub">Generando...</div>
+      </div>
+      <button class="xbtn" onclick="cerrar('mod-reporte')">×</button>
+    </div>
+    <div class="mbody" id="rep-body"></div>
+  </div>
+</div>
+
+<script>
+// ─── IMPORTAR EXCEL ───────────────────────────────────────────
+let xlsOrd = null, xlsItems = null;
+
+function toggleImport(){
+  const p = document.getElementById('import-panel');
+  p.classList.toggle('open');
+}
+
+function onDrag(e, id){ e.preventDefault(); document.getElementById(id).classList.add('drag'); }
+function offDrag(id){ document.getElementById(id).classList.remove('drag'); }
+function onDrop(e, tipo){ e.preventDefault(); offDrag('drop-'+tipo); const f=e.dataTransfer.files[0]; if(f) procesarFile(f, tipo); }
+
+function cargarArchivo(e, tipo){ const f=e.target.files[0]; if(f) procesarFile(f, tipo); }
+
+function procesarFile(file, tipo){
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const wb = XLSX.read(e.target.result, {type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(ws, {defval:''});
+    if(tipo === 'ord'){
+      xlsOrd = data;
+      document.getElementById('loaded-ord').style.display='flex';
+      document.getElementById('loaded-ord-name').textContent = file.name;
+      document.getElementById('title-ord').classList.add('ok');
+    } else {
+      xlsItems = data;
+      document.getElementById('loaded-items').style.display='flex';
+      document.getElementById('loaded-items-name').textContent = file.name;
+      document.getElementById('title-items').classList.add('ok');
+    }
+    document.getElementById('btn-procesar').disabled = !(xlsOrd && xlsItems);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function excelDateToStr(v){
+  if(!v) return '';
+  if(typeof v === 'string' && v.includes('-')) return v;
+  if(typeof v === 'number'){
+    // Excel serial date
+    const d = new Date(Math.round((v - 25569)*86400*1000));
+    const y = d.getUTCFullYear(), mo = String(d.getUTCMonth()+1).padStart(2,'0'), dy = String(d.getUTCDate()).padStart(2,'0');
+    const h = String(d.getUTCHours()).padStart(2,'0'), mi = String(d.getUTCMinutes()).padStart(2,'0');
+    return `${y}-${mo}-${dy} ${h}:${mi}`;
+  }
+  return String(v);
+}
+
+function normTransp(t){
+  if(!t) return '';
+  const s = String(t).toLowerCase();
+  if(s.includes('ser nea') || s.includes('sernea')) return 'Ser Nea';
+  if(s.includes('niclis')) return 'Niclis';
+  if(s.includes('propio')) return 'Propio';
+  return t;
+}
+
+function procesarExcels(){
+  if(!xlsOrd || !xlsItems){ return; }
+  const st = document.getElementById('import-status');
+  try {
+    // Construir mapa de ítems: nroOrden → {lineas, unidades}
+    const mapaItems = {};
+    xlsItems.forEach(row => {
+      // Buscar columna número de orden
+      const nOrden = String(row['Número de Orden preparacion'] || row['Numero de Orden preparacion'] || row['N° Orden'] || '').replace(/^0+/,'');
+      const cant = parseFloat(row['Cantidad'] || 0) || 0;
+      if(!nOrden) return;
+      if(!mapaItems[nOrden]) mapaItems[nOrden] = {lineas:0, unidades:0};
+      mapaItems[nOrden].lineas++;
+      mapaItems[nOrden].unidades += cant;
+    });
+
+    // Construir nuevos pedidos desde el Excel de órdenes
+    const maxId = pedidos.reduce((m,p)=>Math.max(m,p.id),0);
+    let nextId = maxId + 1;
+    const nuevos = [];
+
+    xlsOrd.forEach(row => {
+      const nOrden = String(row['Número'] || row['N° Orden'] || '').replace(/^0+/,'');
+      const nPed   = String(row['Número de Pedido'] || '').replace(/^0+/,'');
+      const nOrdenPad = nOrden.padStart(6,'0');
+      const nPedPad   = nPed.padStart(6,'0');
+
+      // Buscar si ya existe este pedido en la lista actual
+      const existe = pedidos.find(p => String(p.n) === nOrden || String(p.n).padStart(6,'0') === nOrdenPad);
+
+      // Datos de ítems
+      const itInfo = mapaItems[nOrden] || mapaItems[nOrdenPad] || {lineas:0, unidades:0};
+
+      const transporte = normTransp(row['Medio transporte de Pedido'] || '');
+      const fecha = excelDateToStr(row['Fecha de creación'] || row['Fecha de creacion'] || '');
+      const cliente = String(row['Cliente'] || '').toUpperCase();
+      const ciudad  = String(row['Ciudad de Ciudad de Domicilio de Cliente'] || row['Ciudad'] || '').toUpperCase();
+      const vendedor= String(row['Vendedor de Pedido'] || row['Vendedor'] || '');
+      const usuario = String(row['Usuario'] || '');
+      const tipo    = String(row['Tipo operacion'] || row['Tipo'] || 'Normal');
+      const obs     = String(row['Observaciones'] || '');
+
+      if(existe){
+        // Actualizar ítems y unidades del existente, conservar datos manuales
+        existe.items   = itInfo.lineas;
+        existe.unidad  = String(Math.round(itInfo.unidades));
+      } else {
+        // Agregar nuevo
+        nuevos.push({
+          id: nextId++,
+          n: parseInt(nOrden) || 0,
+          ped: parseInt(nPed) || 0,
+          fecha, cliente, transporte, ciudad,
+          usuario, vendedor, tipo, obs,
+          estado: 'Ingresada',
+          picker:'', ctrl: '',
+          inicioP:'', finP:'', inicioC:'', finC:'', fechaC:'',
+          items: itInfo.lineas,
+          unidad: String(Math.round(itInfo.unidades))
+        });
+      }
+    });
+
+    // Agregar nuevos al inicio
+    pedidos = [...nuevos, ...pedidos];
+    guardar(); poblarFiltros(); renderLeyenda(); renderTable();
+
+    const totalAct = xlsOrd.length - nuevos.length;
+    st.className='import-status ok';
+    st.textContent = `✅ Procesado correctamente: ${nuevos.length} órdenes nuevas agregadas, ${totalAct} actualizadas con ítems y unidades.`;
+    document.getElementById('btn-procesar').disabled = true;
+    xlsOrd = null; xlsItems = null;
+    ['loaded-ord','loaded-items'].forEach(id=>{document.getElementById(id).style.display='none';});
+    ['title-ord','title-items'].forEach(id=>{document.getElementById(id).classList.remove('ok');});
+
+  } catch(e){
+    st.className='import-status err';
+    st.textContent = '❌ Error al procesar los archivos: ' + e.message;
+  }
+}
+// ──────────────────────────────────────────────────────────────
+
+
+const TCOLORES = {
+  'Ser Nea':  {cls:'tc-sernea', dot:'var(--sernea)'},
+  'Niclis':   {cls:'tc-niclis', dot:'var(--niclis)'},
+  'Propio':   {cls:'tc-propio', dot:'var(--propio)'},
+  'Otro':     {cls:'tc-sin',    dot:'var(--sin)'},
+  '':         {cls:'tc-sin',    dot:'var(--sin)'},
+};
+function tClass(t){ return TCOLORES[t] || TCOLORES['']; }
+
+const DATOS = [{"id":1,"n":32931,"ped":28206,"fecha":"2026-06-09 13:46","cliente":"MIERES MARCO","transporte":"Niclis","ciudad":"LAGUNA YEMA","usuario":"AROVICHY","vendedor":"Arovich Yessica","tipo":"Normal","obs":"3711615236","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":2,"n":32930,"ped":13781,"fecha":"2026-06-09 13:42","cliente":"FLORES SOLANGE SILVINA","transporte":"Ser Nea","ciudad":"VILLA ANGELA","usuario":"MAIDANF","vendedor":"Maidan, Fabiana","tipo":"Normal","obs":"AGREGAR COSTO DE ENVIO, PASAR FACTURA A SUC PARA COBRAR. CEL:3735 40-4158","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":3,"n":32928,"ped":28202,"fecha":"2026-06-09 11:17","cliente":"HOWARD JONHSON LA RIBERA RESISTENCIA S.A.","transporte":"Propio","ciudad":"RESISTENCIA","usuario":"PILARCHEP","vendedor":"Maidan, Fabiana","tipo":"Normal","obs":"PASAN A RETIRAR!","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":4,"n":32924,"ped":28199,"fecha":"2026-06-09 09:54","cliente":"GARCIA LACUNZA MAURICIO","transporte":"Ser Nea","ciudad":"MACHAGAI","usuario":"AYALAO","vendedor":"Osmar Ayala","tipo":"Normal","obs":"PORTAFIGURITAS TIENE OSMAR. // RETIRA","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":5,"n":15722,"ped":13779,"fecha":"2026-06-09 09:04","cliente":"CARABAJAL HEIDY ELIZABETH","transporte":"Propio","ciudad":"PAMPA DEL INFIERNO","usuario":"SALAZARME","vendedor":"Salazar, Matias","tipo":"Normal","obs":"por favor despachar con ser-nea no se cambio el transporte gracias","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":6,"n":32900,"ped":28041,"fecha":"2026-06-08 13:00","cliente":"FIDEICOMISO DE ADMINISTRACION DE PAUTAS PUBLICITARIAS","transporte":"","ciudad":"RESISTENCIA","usuario":"PILARCHEP","vendedor":"Vendedor Administrativo","tipo":"Licitacion","obs":"FICUDIARIA 01-06 14HS NRO DE PEDIDO 45-9846","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":7,"n":15716,"ped":13770,"fecha":"2026-06-08 09:36","cliente":"TABOADA ESTELA MARIANELA","transporte":"Ser Nea","ciudad":"PAMPA DE LOS GUANACOS","usuario":"PILARCHEP","vendedor":"Salazar, Matias","tipo":"Normal","obs":"","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":8,"n":32870,"ped":27627,"fecha":"2026-06-06 09:23","cliente":"LEGUIZAMON GLADYS","transporte":"Niclis","ciudad":"FORMOSA","usuario":"SANCHEZCM","vendedor":"Arovich Yessica","tipo":"Normal","obs":"Esferas pedidas a Norma,consultar 3704593148","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":9,"n":32862,"ped":28033,"fecha":"2026-06-06 09:15","cliente":"LEGUIZAMON GLADYS","transporte":"Niclis","ciudad":"FORMOSA","usuario":"SANCHEZCM","vendedor":"Arovich Yessica","tipo":"Normal","obs":"Facturar a partir del 1 de junio 3704593148","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":10,"n":32860,"ped":28081,"fecha":"2026-06-06 09:14","cliente":"CUEVAS HARTMAN NOELIA ALEJANDRA","transporte":"Propio","ciudad":"RESISTENCIA","usuario":"SANCHEZCM","vendedor":"Vendedor Administrativo","tipo":"Normal","obs":"","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":11,"n":15713,"ped":13714,"fecha":"2026-06-06 09:14","cliente":"ESPINDOLA JORGE MAURICIO","transporte":"Ser Nea","ciudad":"VILLA ANGELA","usuario":"SANCHEZCM","vendedor":"Salazar, Matias","tipo":"Normal","obs":"CUADERNO MANDAR CELESTE NO CAMBIAR EL COLOR","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":12,"n":15711,"ped":13764,"fecha":"2026-06-05 17:27","cliente":"FUENTES GARCIA EMILIO LENIN","transporte":"Niclis","ciudad":"FORMOSA","usuario":"PILARCHEP","vendedor":"Arovich Yessica","tipo":"Normal","obs":"3704786964","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":13,"n":15712,"ped":13761,"fecha":"2026-06-05 17:27","cliente":"GONZALEZ CARMEN ANDREA","transporte":"Niclis","ciudad":"ING GUILLERMO N JUAREZ","usuario":"PILARCHEP","vendedor":"Arovich Yessica","tipo":"Normal","obs":"3705264240","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":14,"n":15710,"ped":13762,"fecha":"2026-06-05 15:04","cliente":"SOSA OSMAR RAMON","transporte":"Ser Nea","ciudad":"EL PALMAR","usuario":"PILARCHEP","vendedor":"Salazar, Matias","tipo":"Normal","obs":"","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":15,"n":32855,"ped":28113,"fecha":"2026-06-05 08:55","cliente":"ZEITLER ANDREA ROMINA","transporte":"Ser Nea","ciudad":"CORONEL DU GRATY","usuario":"PILARCHEP","vendedor":"Salazar, Matias","tipo":"Normal","obs":"regla de 50 cm mandar si o si necesita para entrega","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":16,"n":32798,"ped":28038,"fecha":"2026-06-04 13:57","cliente":"PEREZ CASTILLO EDGARD HERNAN","transporte":"Niclis","ciudad":"PALO SANTO","usuario":"SANCHEZCM","vendedor":"Arovich Yessica","tipo":"Normal","obs":"3704563366","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":17,"n":32789,"ped":28101,"fecha":"2026-06-03 17:10","cliente":"DE CASTRO PABLO","transporte":"Niclis","ciudad":"FORMOSA","usuario":"PILARCHEP","vendedor":"Arovich Yessica","tipo":"Normal","obs":"Tiza en polvo disponible en Lopez y Junin 3704410189","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":18,"n":15682,"ped":13734,"fecha":"2026-06-03 17:09","cliente":"ROJAS FELIX OSCAR","transporte":"Ser Nea","ciudad":"MISION NUEVA POMPEYA","usuario":"SANCHEZCM","vendedor":"Salazar, Matias","tipo":"Normal","obs":"","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":19,"n":32771,"ped":28089,"fecha":"2026-06-03 11:07","cliente":"PONCE DANIEL CRISTIAN MARCELO","transporte":"Ser Nea","ciudad":"PAMPA DEL INFIERNO","usuario":"PILARCHEP","vendedor":"Salazar, Matias","tipo":"Normal","obs":"bastidor solicitar a illia","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":20,"n":15673,"ped":13731,"fecha":"2026-06-02 16:52","cliente":"CARABAJAL TATIANA SOLEDAD","transporte":"Niclis","ciudad":"POSTA CAMBIO A ZALAZAR","usuario":"PILARCHEP","vendedor":"Arovich Yessica","tipo":"Normal","obs":"Cintas raso:colores surtidos Pelucas disponibles en Showroom 3704796917","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":21,"n":15638,"ped":13677,"fecha":"2026-05-28 14:27","cliente":"FUENTES GARCIA EMILIO LENIN","transporte":"Niclis","ciudad":"FORMOSA","usuario":"SANCHEZCM","vendedor":"Arovich Yessica","tipo":"Normal","obs":"3704786964","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":22,"n":15605,"ped":13618,"fecha":"2026-05-21 16:36","cliente":"TABOADA ESTELA MARIANELA","transporte":"Ser Nea","ciudad":"PAMPA DE LOS GUANACOS","usuario":"SANCHEZCM","vendedor":"Salazar, Matias","tipo":"Normal","obs":"","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":23,"n":32516,"ped":27897,"fecha":"2026-05-21 10:52","cliente":"AGUIRRE FACUNDO ARIEL","transporte":"","ciudad":"VILLA ANA","usuario":"PILARCHEP","vendedor":"Osmar Ayala","tipo":"Normal","obs":"retira","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""},{"id":24,"n":15511,"ped":13497,"fecha":"2026-05-12 17:51","cliente":"MERCADO DE MATERIALES S.R.L","transporte":"Propio","ciudad":"PLOTTIER","usuario":"SANCHEZCM","vendedor":"Salazar, Matias","tipo":"Normal","obs":"LLEVO YO EL LUNES","estado":"Ingresada","picker":"","ctrl":"","inicioP":"","finP":"","inicioC":"","finC":"","fechaC":"","items":0,"unidad":""}];
+
+let pedidos = [];
+
+function calcPlazo(f){
+  if(!f) return null;
+  const d=new Date(f.replace(' ','T')); const h=d.getHours();
+  if(h>=8&&h<15){ return new Date(d.getTime()+72*3600000); }
+  const sig=new Date(d); sig.setDate(sig.getDate()+1); sig.setHours(8,0,0,0);
+  return new Date(sig.getTime()+72*3600000);
+}
+function getAlerta(f){
+  const p=calcPlazo(f); if(!p) return 'ok';
+  const r=(p-new Date())/3600000;
+  if(r<0) return 'vencida'; if(r<=24) return 'critica'; if(r<=48) return 'atencion'; return 'ok';
+}
+function aStyle(t){
+  if(t==='vencida') return {bar:'#C92B2B',cls:'tb-danger',dot:'var(--danger)',label:'Vencida'};
+  if(t==='critica') return {bar:'#D47800',cls:'tb-warn',dot:'var(--warn)',label:'Crítica'};
+  if(t==='atencion') return {bar:'#B8A000',cls:'tb-caut',dot:'var(--caut)',label:'Atención'};
+  return {bar:'#1E9A42',cls:'tb-ok',dot:'var(--ok)',label:'Al día'};
+}
+function tiempoStr(f){
+  const p=calcPlazo(f); if(!p) return '—';
+  const r=p-new Date(); const abs=Math.round(Math.abs(r)/3600000);
+  const d=Math.floor(abs/24),h=abs%24;
+  const s=d>0?d+'d '+h+'h':h+' hs';
+  return r<0?'-'+s:s;
+}
+function epClass(e){
+  if(e==='Ingresada') return 'ep ep-ing';
+  if(e==='En preparación') return 'ep ep-pre';
+  if(e==='En control') return 'ep ep-ctrl';
+  return 'ep ep-comp';
+}
+function guardar(){ try{localStorage.setItem(SK,JSON.stringify(pedidos));}catch(e){} }
+
+function init(){
+  try{ const r=localStorage.getItem(SK); pedidos=r?JSON.parse(r):[...DATOS]; }
+  catch(e){ pedidos=[...DATOS]; }
+  poblarFiltros(); renderLeyenda(); renderTable();
+}
+
+function poblarFiltros(){
+  const ctrls=[...new Set(pedidos.map(p=>p.ctrl).filter(Boolean))].sort();
+  const trans=[...new Set(pedidos.map(p=>p.transporte).filter(Boolean))].sort();
+  document.getElementById('f-ctrl').innerHTML='<option value="">Todos los controladores</option>'+ctrls.map(c=>`<option>${c}</option>`).join('');
+  document.getElementById('f-transp').innerHTML='<option value="">Todos los transportes</option>'+trans.map(t=>`<option>${t}</option>`).join('');
+}
+
+function renderLeyenda(){
+  const trans=[...new Set(pedidos.map(p=>p.transporte).filter(Boolean))];
+  const leg=document.getElementById('transp-legend');
+  const chips=trans.map(t=>{
+    const c=tClass(t);
+    return `<span class="t-chip ${c.cls}"><span class="td" style="background:${c.dot}"></span>${t}</span>`;
+  }).join('');
+  leg.innerHTML=`<span class="ley-lbl">Transportes</span>${chips}`;
+}
+
+function renderTable(){
+  const q=document.getElementById('buscar').value.toLowerCase();
+  const fe=document.getElementById('f-estado').value;
+  const fa=document.getElementById('f-alerta').value;
+  const fc=document.getElementById('f-ctrl').value;
+  const ft=document.getElementById('f-transp').value;
+
+  const fil=pedidos.filter(p=>{
+    const txt=[p.cliente,String(p.n),String(p.ped),p.ciudad,p.ctrl,p.picker,p.transporte,p.obs].join(' ').toLowerCase();
+    const al=getAlerta(p.fecha);
+    return(!q||txt.includes(q))&&(!fe||p.estado===fe)&&(!fa||al===fa)&&(!fc||p.ctrl===fc)&&(!ft||p.transporte===ft);
+  });
+
+  const venc=pedidos.filter(p=>getAlerta(p.fecha)==='vencida').length;
+  const warn=pedidos.filter(p=>['critica','atencion'].includes(getAlerta(p.fecha))).length;
+  const okC=pedidos.filter(p=>getAlerta(p.fecha)==='ok').length;
+  document.getElementById('m-total').textContent=pedidos.length;
+  document.getElementById('m-venc').textContent=venc;
+  document.getElementById('m-warn').textContent=warn;
+  document.getElementById('m-ok').textContent=okC;
+  document.getElementById('m-ctrl').textContent=new Set(pedidos.map(p=>p.ctrl).filter(Boolean)).size;
+
+  const bw=document.getElementById('banner-wrap');
+  if(venc>0) bw.innerHTML=`<div class="banner danger"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>${venc} orden${venc>1?'es':''} vencida${venc>1?'s':''}</strong> — Superaron las 72 hs sin despachar. Requieren atención inmediata.</div>`;
+  else if(warn>0) bw.innerHTML=`<div class="banner warn"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><strong>${warn} orden${warn>1?'es':''} próxima${warn>1?'s':''} a vencer</strong> — Revisalas antes de las 72 hs.</div>`;
+  else bw.innerHTML='';
+
+  const tbody=document.getElementById('tbody');
+  if(!fil.length){tbody.innerHTML='<tr><td colspan="20" class="empty-td">No se encontraron resultados para los filtros aplicados.</td></tr>';return;}
+
+  tbody.innerHTML=fil.map(p=>{
+    const al=getAlerta(p.fecha); const as=aStyle(al);
+    const tc=tClass(p.transporte);
+    const fecha=p.fecha?p.fecha.slice(0,16):'—';
+    const cli=p.cliente.length>22?p.cliente.slice(0,22)+'…':p.cliente;
+    const tip=p.tipo==='Licitacion'?'tipo-licit':'tipo-norm';
+    const transp=p.transporte||'Sin asignar';
+    const picker=p.picker?`<span class="picker-cell">${p.picker}</span>`:`<span style="color:#C0C8DC;font-size:11px;">—</span>`;
+    const esExpress = p.items === 10;
+    const itemsCell = esExpress
+      ? `<span class="express-badge">⚡ ${p.items} express</span>`
+      : `<span style="font-weight:700;color:#1A4FA8">${p.items||'—'}</span>`;
+    return `<tr class="${esExpress?'express-row':''}" onclick="verDetalle(${p.id})">
+      <td class="td-bar"><div class="bar" style="background:${esExpress?'var(--express)':as.bar}"></div></td>
+      <td><span class="num-bold">${p.n}</span></td>
+      <td style="color:var(--text2)">${p.ped}</td>
+      <td style="font-size:11px;color:var(--text2)">${fecha}</td>
+      <td><span class="tbadge ${as.cls}"><span class="td" style="background:${as.dot}"></span>${tiempoStr(p.fecha)}</span></td>
+      <td><span class="${epClass(p.estado)}">${p.estado}</span></td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;font-size:12px;font-weight:500">${cli}</td>
+      <td><span class="tc ${tc.cls}"><span class="td" style="background:${tc.dot}"></span>${transp}</span></td>
+      <td class="ciudad-cell">${p.ciudad||'—'}</td>
+      <td style="text-align:center">${itemsCell}</td>
+      <td style="font-size:11px;color:var(--text2)">${p.unidad||'—'}</td>
+      <td>${picker}</td>
+      <td class="hora-cell">${p.fechaP||'—'}</td>
+      <td class="hora-cell">${p.inicioP||'—'}</td>
+      <td class="hora-cell">${p.finP||'—'}</td>
+      <td style="font-size:11px;color:#7B3FBB;font-weight:600">${p.vendedor||'—'}</td>
+      <td><span class="ctrl-cell">${p.ctrl||'—'}</span></td>
+      <td style="font-size:11px;color:var(--text2)">${p.fechaC||'—'}</td>
+      <td class="hora-cell">${p.inicioC||'—'}</td>
+      <td class="hora-cell">${p.finC||'—'}</td>
+      <td><span class="${tip}">${p.tipo||'Normal'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function verDetalle(id){
+  const p=pedidos.find(x=>x.id===id); if(!p) return;
+  const al=getAlerta(p.fecha); const as=aStyle(al);
+  const tc=tClass(p.transporte);
+  const plazo=calcPlazo(p.fecha);
+  const ps=plazo?plazo.toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+  document.getElementById('det-title').textContent=`Orden N° ${p.n} — ${p.cliente.slice(0,30)}`;
+  document.getElementById('det-sub').innerHTML=`<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;margin-top:4px;color:rgba(255,255,255,.8)">Vence: ${ps} · ${tiempoStr(p.fecha)}</span>`;
+  document.getElementById('det-body').innerHTML=`
+    <div style="margin-bottom:14px">
+      <div class="drow"><span class="dlbl">N° Pedido</span><span class="dval">${p.ped}</span></div>
+      <div class="drow"><span class="dlbl">Cliente</span><span class="dval">${p.cliente}</span></div>
+      <div class="drow"><span class="dlbl">Fecha creación</span><span class="dval">${p.fecha||'—'}</span></div>
+      <div class="drow"><span class="dlbl">Transporte</span><span class="dval"><span class="tc ${tc.cls}">${p.transporte||'Sin asignar'}</span></span></div>
+      <div class="drow"><span class="dlbl">Ciudad</span><span class="dval">${p.ciudad||'—'}</span></div>
+      <div class="drow"><span class="dlbl">Ítems / Unidad</span><span class="dval">${p.items||'—'} ${p.unidad||''}</span></div>
+      <div class="drow"><span class="dlbl">Tipo operación</span><span class="dval">${p.tipo||'Normal'}</span></div>
+      <div class="drow"><span class="dlbl">Observaciones</span><span class="dval">${p.obs||'—'}</span></div>
+    </div>
+    <div class="sec-box orange">
+      <div class="sec-title">Picker</div>
+      <div class="fgrid" style="grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+        <div class="fg" style="grid-column:1/-1"><label class="flbl">Nombre</label><input class="finp" id="e-picker" value="${p.picker||''}" placeholder="Nombre del picker"></div>
+        <div class="fg"><label class="flbl">Fecha picker</label><input class="finp" id="e-fechaP" type="date" value="${p.fechaP||''}"></div>
+        <div class="fg"><label class="flbl">Hora inicio</label><input class="finp" id="e-inicioP" type="time" value="${p.inicioP||''}"></div>
+        <div class="fg"><label class="flbl">Hora fin</label><input class="finp" id="e-finP" type="time" value="${p.finP||''}"></div>
+      </div>
+    </div>
+    <div class="sec-box" style="margin-top:10px">
+      <div class="sec-title">Controlador</div>
+      <div class="fgrid" style="grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+        <div class="fg" style="grid-column:1/-1"><label class="flbl">Nombre</label><input class="finp" id="e-ctrl" value="${p.ctrl||''}" placeholder="Nombre del controlador"></div>
+        <div class="fg"><label class="flbl">Fecha control</label><input class="finp" id="e-fechaC" type="date" value="${p.fechaC||''}"></div>
+        <div class="fg"><label class="flbl">Hora inicio</label><input class="finp" id="e-inicioC" type="time" value="${p.inicioC||''}"></div>
+        <div class="fg"><label class="flbl">Hora fin</label><input class="finp" id="e-finC" type="time" value="${p.finC||''}"></div>
+      </div>
+    </div>
+    <div class="fgrid" style="margin-top:12px;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fg"><label class="flbl">Estado</label>
+        <select class="fsel2" id="e-estado">
+          <option ${p.estado==='Ingresada'?'selected':''}>Ingresada</option>
+          <option ${p.estado==='En preparación'?'selected':''}>En preparación</option>
+          <option ${p.estado==='En control'?'selected':''}>En control</option>
+          <option ${p.estado==='Completada'?'selected':''}>Completada</option>
+        </select>
+      </div>
+      <div class="fg"><label class="flbl">Ítems</label><input class="finp" id="e-items" type="number" value="${p.items||0}"></div>
+    </div>
+    <div class="factions">
+      <button class="btn-save" onclick="guardarDetalle(${id})">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+        Guardar cambios
+      </button>
+      <button class="btn-cancel" onclick="cerrar('mod-det')">Cerrar</button>
+    </div>`;
+  document.getElementById('mod-det').classList.add('open');
+}
+
+function guardarDetalle(id){
+  const p=pedidos.find(x=>x.id===id); if(!p) return;
+  p.picker=document.getElementById('e-picker').value.trim();
+  p.fechaP=document.getElementById('e-fechaP').value;
+  p.inicioP=document.getElementById('e-inicioP').value;  p.finP=document.getElementById('e-finP').value;
+  p.ctrl=document.getElementById('e-ctrl').value.trim();
+  p.inicioC=document.getElementById('e-inicioC').value;
+  p.finC=document.getElementById('e-finC').value;
+  p.fechaC=document.getElementById('e-fechaC').value;
+  p.estado=document.getElementById('e-estado').value;
+  p.items=parseInt(document.getElementById('e-items').value)||0;
+  guardar(); poblarFiltros(); renderLeyenda(); renderTable(); cerrar('mod-det');
+}
+
+function abrirNuevo(){ document.getElementById('mod-nuevo').classList.add('open'); }
+
+function guardarNuevo(){
+  const num=document.getElementById('nn-num').value.trim();
+  const cli=document.getElementById('nn-cli').value.trim();
+  const ctrl=document.getElementById('nn-ctrl').value.trim();
+  if(!num||!cli||!ctrl){alert('Completá N° Orden, Cliente y Controlador.');return;}
+  const ahora=new Date();
+  const fecha=ahora.toISOString().slice(0,16).replace('T',' ');
+  const maxId=pedidos.reduce((m,p)=>Math.max(m,p.id),0);
+  pedidos.unshift({
+    id:maxId+1, n:parseInt(num), ped:parseInt(document.getElementById('nn-ped').value)||0,
+    fecha, cliente:cli.toUpperCase(),
+    transporte:document.getElementById('nn-trans').value,
+    ciudad:document.getElementById('nn-ciudad').value.toUpperCase(),
+    items:parseInt(document.getElementById('nn-items').value)||0,
+    unidad:document.getElementById('nn-unidad').value,
+    tipo:document.getElementById('nn-tipo').value,
+    picker:document.getElementById('nn-picker').value.trim(),
+    fechaP:document.getElementById('nn-fechaP').value,
+    ctrl:ctrl.toUpperCase(),
+    inicioP:document.getElementById('nn-inicioP').value,
+    finP:document.getElementById('nn-finP').value,
+    inicioC:'', finC:'', fechaC:'',
+    estado:'Ingresada',
+    obs:document.getElementById('nn-obs').value,
+    usuario:'', vendedor:''
+  });
+  guardar(); poblarFiltros(); renderLeyenda(); renderTable(); cerrar('mod-nuevo');
+  ['nn-num','nn-ped','nn-cli','nn-ciudad','nn-items','nn-unidad','nn-picker','nn-fechaP','nn-ctrl','nn-inicioP','nn-finP','nn-obs'].forEach(i=>{document.getElementById(i).value='';});
+}
+
+function cerrar(id){document.getElementById(id).classList.remove('open');}
+
+// ─── REPORTE SEMANAL ──────────────────────────────────────────
+function getInicioSemana(){
+  const hoy = new Date();
+  const dia = hoy.getDay(); // 0=dom,1=lun...4=jue
+  const lunes = new Date(hoy);
+  lunes.setDate(hoy.getDate() - (dia === 0 ? 6 : dia - 1));
+  lunes.setHours(0,0,0,0);
+  return lunes;
+}
+
+function calcHoras(ini, fin){
+  if(!ini || !fin) return 0;
+  const [h1,m1]=ini.split(':').map(Number);
+  const [h2,m2]=fin.split(':').map(Number);
+  const mins = (h2*60+m2) - (h1*60+m1);
+  return mins > 0 ? mins/60 : 0;
+}
+
+function fmtHoras(h){
+  const hh = Math.floor(h), mm = Math.round((h-hh)*60);
+  return hh+'h '+(mm>0?mm+'m':'');
+}
+
+function abrirReporte(){
+  const inicio = getInicioSemana();
+  const fin = new Date(inicio); fin.setDate(inicio.getDate()+6); fin.setHours(23,59,59);
+
+  const semana = pedidos.filter(p => {
+    if(!p.fecha) return false;
+    const d = new Date(p.fecha.replace(' ','T'));
+    return d >= inicio && d <= fin;
+  });
+
+  const fmtFecha = d => d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const titulo = `Semana ${fmtFecha(inicio)} — ${fmtFecha(fin)}`;
+
+  // Métricas generales
+  const totalPed = semana.length;
+  const totalItems = semana.reduce((s,p)=>s+(p.items||0),0);
+  const totalUnidades = semana.reduce((s,p)=>s+(parseInt(p.unidad)||0),0);
+  const express10 = semana.filter(p=>p.items===10).length;
+  const completadas = semana.filter(p=>p.estado==='Completada').length;
+
+  // Stats por picker (solo los que tienen nombre cargado manualmente)
+  const mapaPickerH = {};
+  semana.forEach(p=>{
+    if(!p.picker) return;
+    if(!mapaPickerH[p.picker]) mapaPickerH[p.picker]={horas:0,ordenes:0,items:0,unidades:0};
+    mapaPickerH[p.picker].horas    += calcHoras(p.inicioP, p.finP);
+    mapaPickerH[p.picker].ordenes++;
+    mapaPickerH[p.picker].items    += (p.items||0);
+    mapaPickerH[p.picker].unidades += (parseInt(p.unidad)||0);
+  });
+
+  // Stats por controlador (solo los cargados manualmente — excluye usuarios del sistema)
+  const mapaCtrlH = {};
+  semana.forEach(p=>{
+    if(!p.ctrl) return;
+    if(!mapaCtrlH[p.ctrl]) mapaCtrlH[p.ctrl]={horas:0,ordenes:0,items:0,unidades:0};
+    mapaCtrlH[p.ctrl].horas    += calcHoras(p.inicioC, p.finC);
+    mapaCtrlH[p.ctrl].ordenes++;
+    mapaCtrlH[p.ctrl].items    += (p.items||0);
+    mapaCtrlH[p.ctrl].unidades += (parseInt(p.unidad)||0);
+  });
+
+  // Pedidos por día
+  const diasMap = {};
+  const diasNom = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  semana.forEach(p=>{
+    const d = new Date(p.fecha.replace(' ','T'));
+    const key = fmtFecha(d) + ' ' + diasNom[d.getDay()];
+    if(!diasMap[key]) diasMap[key]={pedidos:0,items:0,unidades:0};
+    diasMap[key].pedidos++;
+    diasMap[key].items    += (p.items||0);
+    diasMap[key].unidades += (parseInt(p.unidad)||0);
+  });
+
+  const pickerRows = Object.entries(mapaPickerH).sort((a,b)=>b[1].ordenes-a[1].ordenes)
+    .map(([n,v])=>`
+      <tr>
+        <td><strong>${n}</strong></td>
+        <td style="text-align:center">${v.ordenes}</td>
+        <td style="text-align:center">${v.items}</td>
+        <td style="text-align:center">${v.unidades}</td>
+        <td style="text-align:center;color:#B04800;font-weight:700">${fmtHoras(v.horas)}</td>
+      </tr>`).join('') || '<tr><td colspan="5" style="color:var(--text3);text-align:center;padding:12px">Sin datos cargados aún</td></tr>';
+
+  const ctrlRows = Object.entries(mapaCtrlH).sort((a,b)=>b[1].ordenes-a[1].ordenes)
+    .map(([n,v])=>`
+      <tr>
+        <td><strong>${n}</strong></td>
+        <td style="text-align:center">${v.ordenes}</td>
+        <td style="text-align:center">${v.items}</td>
+        <td style="text-align:center">${v.unidades}</td>
+        <td style="text-align:center;color:#1A4FA8;font-weight:700">${fmtHoras(v.horas)}</td>
+      </tr>`).join('') || '<tr><td colspan="5" style="color:var(--text3);text-align:center;padding:12px">Sin datos cargados aún</td></tr>';
+
+  const diaRows = Object.entries(diasMap)
+    .map(([d,v])=>`<tr><td><strong>${d}</strong></td><td style="text-align:center">${v.pedidos}</td><td style="text-align:center">${v.items}</td><td style="text-align:center">${v.unidades}</td></tr>`).join('') || '<tr><td colspan="4" style="color:var(--text3);text-align:center;padding:12px">Sin datos</td></tr>';
+
+  document.getElementById('rep-title').textContent = 'Reporte Semanal · La Llave';
+  document.getElementById('rep-sub').textContent = titulo;
+  document.getElementById('rep-body').innerHTML = `
+    <div class="rep-section">
+      <div class="rep-section-title">Resumen general</div>
+      <div class="rep-grid">
+        <div class="rep-card"><div class="rep-card-val">${totalPed}</div><div class="rep-card-lbl">Pedidos</div></div>
+        <div class="rep-card"><div class="rep-card-val">${totalItems}</div><div class="rep-card-lbl">Ítems totales</div></div>
+        <div class="rep-card"><div class="rep-card-val">${totalUnidades}</div><div class="rep-card-lbl">Unidades totales</div></div>
+        <div class="rep-card"><div class="rep-card-val">${completadas}</div><div class="rep-card-lbl">Completadas</div></div>
+        <div class="rep-card"><div class="rep-card-val" style="color:var(--express)">⚡ ${express10}</div><div class="rep-card-lbl">Express (10 ítems)</div></div>
+        <div class="rep-card"><div class="rep-card-val">${totalPed>0?Math.round(totalItems/totalPed):0}</div><div class="rep-card-lbl">Ítems prom./pedido</div></div>
+      </div>
+    </div>
+    <div class="rep-section">
+      <div class="rep-section-title">📅 Pedidos por día</div>
+      <table class="rep-table">
+        <thead><tr><th>Día</th><th style="text-align:center">Pedidos</th><th style="text-align:center">Ítems</th><th style="text-align:center">Unidades</th></tr></thead>
+        <tbody>${diaRows}</tbody>
+      </table>
+    </div>
+    <div class="rep-section">
+      <div class="rep-section-title">🟠 Piqueo — Sergio Martínez · Walter Gamarra</div>
+      <table class="rep-table">
+        <thead><tr><th>Picker</th><th style="text-align:center">Órdenes</th><th style="text-align:center">Ítems</th><th style="text-align:center">Unidades</th><th style="text-align:center">Horas</th></tr></thead>
+        <tbody>${pickerRows}</tbody>
+      </table>
+    </div>
+    <div class="rep-section">
+      <div class="rep-section-title">🔵 Control — Julián Soto · Facundo Ríos</div>
+      <table class="rep-table">
+        <thead><tr><th>Controlador</th><th style="text-align:center">Órdenes</th><th style="text-align:center">Ítems</th><th style="text-align:center">Unidades</th><th style="text-align:center">Horas</th></tr></thead>
+        <tbody>${ctrlRows}</tbody>
+      </table>
+    </div>
+    <div class="factions">
+      <button class="btn-dl" onclick="descargarReporte('${titulo.replace(/'/g,'').replace(/—/g,'-')}')">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descargar Excel
+      </button>
+      <button class="btn-cancel" onclick="cerrar('mod-reporte')">Cerrar</button>
+    </div>`;
+  document.getElementById('mod-reporte').classList.add('open');
+}
+
+function descargarReporte(titulo){
+  const inicio = getInicioSemana();
+  const fin = new Date(inicio); fin.setDate(inicio.getDate()+6); fin.setHours(23,59,59);
+  const semana = pedidos.filter(p=>{
+    if(!p.fecha) return false;
+    const d=new Date(p.fecha.replace(' ','T'));
+    return d>=inicio && d<=fin;
+  });
+
+  const ws_data = [
+    ['N° Orden','N° Pedido','Fecha','Cliente','Transporte','Ciudad','Estado','Ítems','Unidades','Express','Picker','Fecha Picker','Inicio Picker','Fin Picker','Controlador','Fecha Control','Inicio Control','Fin Control'],
+    ...semana.map(p=>[p.n,p.ped,p.fecha,p.cliente,p.transporte,p.ciudad,p.estado,p.items,p.unidad||'',p.items===10?'SÍ':'NO',p.picker||'',p.fechaP||'',p.inicioP||'',p.finP||'',p.ctrl||'',p.fechaC||'',p.inicioC||'',p.finC||''])
+  ];
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  XLSX.utils.book_append_sheet(wb, ws, 'Reporte Semanal');
+  XLSX.writeFile(wb, `Reporte_Semanal_LaLlave_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+// ──────────────────────────────────────────────────────────────
+
+// ─── BACKUP ───────────────────────────────────────────────────
+function exportarBackup(){
+  const datos = JSON.stringify(pedidos, null, 2);
+  const blob = new Blob([datos], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `backup_ordenes_LaLlave_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importarBackup(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    try{
+      const datos = JSON.parse(ev.target.result);
+      if(!Array.isArray(datos)) throw new Error('Formato inválido');
+      if(!confirm(`¿Restaurar backup con ${datos.length} órdenes? Se reemplazarán los datos actuales.`)) return;
+      pedidos = datos;
+      guardar(); poblarFiltros(); renderLeyenda(); renderTable();
+      alert(`✅ Backup restaurado correctamente. ${datos.length} órdenes cargadas.`);
+    } catch(err){
+      alert('❌ Error al leer el backup: ' + err.message);
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+// ──────────────────────────────────────────────────────────────
+
+(id,e){if(e.target===document.getElementById(id))cerrar(id);}
+init();
+</script>
+</body>
+</html>
