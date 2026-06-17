@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: plataforma-llave
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: SYNC_SECRET
+        sync: false

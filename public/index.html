@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Órdenes de Preparación · La Llave</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-icon">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg>
+    </div>
+    <div>
+      <div class="hdr-title">Órdenes de Preparación</div>
+      <div class="hdr-sub">Depósito Ruta 11 · La Llave</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="cloud-pill">
+      <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+      Sincronizado
+    </div>
+    <button class="btn-report" onclick="abrirReporte()">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Reporte semanal
+    </button>
+    <button class="btn-new" onclick="abrirNuevo()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nueva orden
+    </button>
+  </div>
+</header>
+
+<main class="main">
+  <div id="banner-wrap"></div>
+
+  <div class="metrics">
+    <div class="mc total"><div class="mc-lbl">Total órdenes</div><div class="mc-val" id="m-total">—</div></div>
+    <div class="mc danger"><div class="mc-lbl">Vencidas +72 hs</div><div class="mc-val" id="m-venc">—</div></div>
+    <div class="mc warn"><div class="mc-lbl">Por vencer</div><div class="mc-val" id="m-warn">—</div></div>
+    <div class="mc ok"><div class="mc-lbl">Al día</div><div class="mc-val" id="m-ok">—</div></div>
+    <div class="mc ctrl"><div class="mc-lbl">Controladores</div><div class="mc-val" id="m-ctrl">—</div></div>
+  </div>
+
+  <div class="leyenda-row">
+    <span class="ley-lbl">Alertas</span>
+    <span class="ley-item"><span class="ley-dot" style="background:var(--danger)"></span>Vencida (+72 hs)</span>
+    <span class="ley-item"><span class="ley-dot" style="background:var(--warn)"></span>Crítica (48–72 hs)</span>
+    <span class="ley-item"><span class="ley-dot" style="background:var(--caut)"></span>Atención (24–48 hs)</span>
+    <span class="ley-item"><span class="ley-dot" style="background:var(--ok)"></span>Al día (−24 hs)</span>
+  </div>
+
+  <div class="leyenda-row" id="transp-legend">
+    <span class="ley-lbl">Transportes</span>
+  </div>
+
+  <div class="toolbar">
+    <div class="sw">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="si" id="buscar" type="text" placeholder="Buscar cliente, orden, ciudad, picker, controlador…" oninput="renderTable()">
+    </div>
+    <select class="fsel" id="f-estado" onchange="renderTable()">
+      <option value="">Todos los estados</option>
+      <option value="Ingresada">Ingresada</option>
+      <option value="En preparación">En preparación</option>
+      <option value="En control">En control</option>
+      <option value="Completada">Completada</option>
+    </select>
+    <select class="fsel" id="f-alerta" onchange="renderTable()">
+      <option value="">Todas las alertas</option>
+      <option value="vencida">Vencidas +72 hs</option>
+      <option value="critica">Críticas 48–72 hs</option>
+      <option value="atencion">Atención 24–48 hs</option>
+      <option value="ok">Al día</option>
+    </select>
+    <select class="fsel" id="f-ctrl" onchange="renderTable()"><option value="">Todos los controladores</option></select>
+    <select class="fsel" id="f-transp" onchange="renderTable()"><option value="">Todos los transportes</option></select>
+  </div>
+
+  <div class="tcard">
+    <div class="tscroll">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:5px;padding:0;"></th>
+            <th>N° Orden</th>
+            <th>N° Pedido</th>
+            <th>Fecha creación</th>
+            <th>Tiempo</th>
+            <th>Estado</th>
+            <th>Cliente</th>
+            <th>Transporte</th>
+            <th>Ciudad</th>
+            <th>Ítems</th>
+            <th>Unidad</th>
+            <th>Picker</th>
+            <th>Fecha picker</th>
+            <th>Inicio picker</th>
+            <th>Fin picker</th>
+            <th>Vendedor</th>
+            <th>Controlador</th>
+            <th>Fecha ctrl.</th>
+            <th>Inicio ctrl.</th>
+            <th>Fin ctrl.</th>
+            <th>Tipo</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- MODAL NUEVA ORDEN -->
+<div class="overlay" id="mod-nuevo" onclick="cerrarOv('mod-nuevo',event)">
+  <div class="mbox">
+    <div class="mhdr">
+      <div><div class="mtitle">Nueva orden de preparación</div><div class="msub">Campos marcados con * son obligatorios</div></div>
+      <button class="xbtn" onclick="cerrar('mod-nuevo')">×</button>
+    </div>
+    <div class="mbody">
+      <div class="fgrid">
+        <div class="fg"><label class="flbl">N° Orden *</label><input class="finp" id="nn-num" type="number" placeholder="32999"></div>
+        <div class="fg"><label class="flbl">N° Pedido</label><input class="finp" id="nn-ped" type="number" placeholder="28200"></div>
+        <div class="fg full"><label class="flbl">Cliente *</label><input class="finp" id="nn-cli" type="text" placeholder="Nombre completo del cliente"></div>
+        <div class="fg"><label class="flbl">Transporte</label>
+          <select class="fsel2" id="nn-trans">
+            <option value="">Sin asignar</option>
+            <option value="Ser Nea">Ser Nea</option>
+            <option value="Niclis">Niclis</option>
+            <option value="Propio">Propio</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="fg"><label class="flbl">Ciudad</label><input class="finp" id="nn-ciudad" type="text" placeholder="RESISTENCIA"></div>
+        <div class="fg"><label class="flbl">Cant. ítems</label><input class="finp" id="nn-items" type="number" placeholder="0"></div>
+        <div class="fg"><label class="flbl">Unidad</label><input class="finp" id="nn-unidad" type="text" placeholder="Caja / Bulto / Unid."></div>
+        <div class="fg"><label class="flbl">Tipo operación</label>
+          <select class="fsel2" id="nn-tipo">
+            <option>Normal</option>
+            <option>Normal Modifica Precios</option>
+            <option>Licitacion</option>
+          </select>
+        </div>
+      </div>
+      <div class="sec-box orange">
+        <div class="sec-title">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          Picker
+        </div>
+        <div class="fgrid" style="grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
+          <div class="fg" style="grid-column:1/-1"><label class="flbl">Nombre del picker *</label><input class="finp" id="nn-picker" type="text" placeholder="Nombre completo"></div>
+          <div class="fg"><label class="flbl">Fecha picker</label><input class="finp" id="nn-fechaP" type="date"></div>
+          <div class="fg"><label class="flbl">Hora inicio</label><input class="finp" id="nn-inicioP" type="time"></div>
+          <div class="fg"><label class="flbl">Hora fin</label><input class="finp" id="nn-finP" type="time"></div>
+        </div>
+      </div>
+      <div class="sec-box">
+        <div class="sec-title">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Controlador
+        </div>
+        <div class="fgrid" style="grid-template-columns:1fr 1fr 1fr;gap:10px;">
+          <div class="fg" style="grid-column:1/-1"><label class="flbl">Nombre del controlador *</label><input class="finp" id="nn-ctrl" type="text" placeholder="Nombre completo"></div>
+          <div class="fg"><label class="flbl">Hora inicio</label><input class="finp" id="nn-inicioC" type="time"></div>
+          <div class="fg"><label class="flbl">Hora fin</label><input class="finp" id="nn-finC" type="time"></div>
+        </div>
+      </div>
+      <div class="fg full" style="margin-top:12px;"><label class="flbl">Observaciones</label><textarea class="ftxt" id="nn-obs" placeholder="Notas adicionales…"></textarea></div>
+      <div class="factions">
+        <button class="btn-save" onclick="guardarNuevo()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+          Guardar orden
+        </button>
+        <button class="btn-cancel" onclick="cerrar('mod-nuevo')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE -->
+<div class="overlay" id="mod-det" onclick="cerrarOv('mod-det',event)">
+  <div class="mbox">
+    <div class="mhdr" id="det-hdr">
+      <div><div class="mtitle" id="det-title">Detalle</div><div class="msub" id="det-sub"></div></div>
+      <button class="xbtn" onclick="cerrar('mod-det')">×</button>
+    </div>
+    <div class="mbody" id="det-body"></div>
+  </div>
+</div>
+
+<!-- MODAL REPORTE SEMANAL -->
+<div class="overlay" id="mod-reporte" onclick="cerrarOv('mod-reporte',event)">
+  <div class="mbox" style="max-width:720px;">
+    <div class="rep-header">
+      <div>
+        <div class="mtitle" id="rep-title">Reporte Semanal</div>
+        <div class="msub" id="rep-sub">Generando...</div>
+      </div>
+      <button class="xbtn" onclick="cerrar('mod-reporte')">×</button>
+    </div>
+    <div class="mbody" id="rep-body"></div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
