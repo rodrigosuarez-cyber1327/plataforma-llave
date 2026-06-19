@@ -1,18 +1,19 @@
-const sqlite3 = require('sqlite3');
-const { open } = require('sqlite');
-const fs = require('fs');
+const { Pool } = require('pg');
 
-const DB_FILE = './database.sqlite';
+let pool;
 
 async function setupDatabase() {
-    const db = await open({
-        filename: DB_FILE,
-        driver: sqlite3.Database
+    pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: {
+            rejectUnauthorized: false
+        }
     });
 
-    await db.exec(`
+    // Create table if it doesn't exist
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS pedidos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             n INTEGER,
             ped INTEGER,
             fecha TEXT,
@@ -37,7 +38,7 @@ async function setupDatabase() {
         )
     `);
 
-    return db;
+    return pool;
 }
 
 module.exports = {

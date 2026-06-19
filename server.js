@@ -38,8 +38,8 @@ setupDatabase().then(database => {
 // Get all orders (Public for read)
 app.get('/api/pedidos', async (req, res) => {
     try {
-        const pedidos = await db.all('SELECT * FROM pedidos ORDER BY id DESC');
-        res.json(pedidos);
+        const { rows } = await db.query('SELECT * FROM pedidos ORDER BY id DESC');
+        res.json(rows);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -49,12 +49,13 @@ app.get('/api/pedidos', async (req, res) => {
 app.post('/api/pedidos', async (req, res) => {
     try {
         const { n, ped, fecha, cliente, transporte, ciudad, items, unidad, tipo, picker, fechaP, ctrl, inicioP, finP, obs, estado } = req.body;
-        const result = await db.run(`
+        const result = await db.query(`
             INSERT INTO pedidos (n, ped, fecha, cliente, transporte, ciudad, items, unidad, tipo, picker, fechaP, ctrl, inicioP, finP, inicioC, finC, fechaC, obs, estado, usuario, vendedor)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', '', ?, ?, '', '')
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, '', '', '', $15, $16, '', '')
+            RETURNING id
         `, [n, ped, fecha, cliente, transporte, ciudad, items, unidad, tipo, picker, fechaP, ctrl, inicioP, finP, obs, estado || 'Ingresada']);
         
-        res.status(201).json({ id: result.lastID, ...req.body });
+        res.status(201).json({ id: result.rows[0].id, ...req.body });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -66,10 +67,10 @@ app.put('/api/pedidos/:id', async (req, res) => {
         const { id } = req.params;
         const { picker, fechaP, inicioP, finP, ctrl, inicioC, finC, fechaC, estado, items } = req.body;
         
-        await db.run(`
+        await db.query(`
             UPDATE pedidos 
-            SET picker = ?, fechaP = ?, inicioP = ?, finP = ?, ctrl = ?, inicioC = ?, finC = ?, fechaC = ?, estado = ?, items = ?
-            WHERE id = ?
+            SET picker = $1, fechaP = $2, inicioP = $3, finP = $4, ctrl = $5, inicioC = $6, finC = $7, fechaC = $8, estado = $9, items = $10
+            WHERE id = $11
         `, [picker, fechaP, inicioP, finP, ctrl, inicioC, finC, fechaC, estado, items, id]);
         
         res.json({ success: true });
@@ -83,29 +84,32 @@ app.post('/api/pedidos/batch', checkSecret, async (req, res) => {
     try {
         const { nuevos, actualizados } = req.body;
 
-        await db.exec('BEGIN TRANSACTION');
-
+        const client = await db.connect();
         try {
+            await client.query('BEGIN');
+
             // Insertar nuevos
             for (const p of nuevos) {
-                await db.run(`
+                await client.query(`
                     INSERT INTO pedidos (id, n, ped, fecha, cliente, transporte, ciudad, items, unidad, tipo, picker, fechaP, ctrl, inicioP, finP, inicioC, finC, fechaC, obs, estado, usuario, vendedor)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
                 `, [p.id, p.n, p.ped, p.fecha, p.cliente, p.transporte, p.ciudad, p.items, p.unidad, p.tipo, p.picker, p.fechaP, p.ctrl, p.inicioP, p.finP, p.inicioC, p.finC, p.fechaC, p.obs, p.estado, p.usuario, p.vendedor]);
             }
 
             // Actualizar items de los existentes
             for (const p of actualizados) {
-                await db.run(`
-                    UPDATE pedidos SET items = ?, unidad = ? WHERE id = ?
+                await client.query(`
+                    UPDATE pedidos SET items = $1, unidad = $2 WHERE id = $3
                 `, [p.items, p.unidad, p.id]);
             }
 
-            await db.exec('COMMIT');
+            await client.query('COMMIT');
             res.json({ success: true, inserted: nuevos.length, updated: actualizados.length });
         } catch (err) {
-            await db.exec('ROLLBACK');
+            await client.query('ROLLBACK');
             throw err;
+        } finally {
+            client.release();
         }
 
     } catch (error) {
@@ -122,20 +126,23 @@ app.post('/api/pedidos/restore', checkSecret, async (req, res) => {
             return res.status(400).json({ error: 'Payload must be an array of orders' });
         }
 
-        await db.exec('BEGIN TRANSACTION');
+        const client = await db.connect();
         try {
-            await db.exec('DELETE FROM pedidos');
+            await client.query('BEGIN');
+            await client.query('DELETE FROM pedidos');
             for (const p of pedidos) {
-                await db.run(`
+                await client.query(`
                     INSERT INTO pedidos (id, n, ped, fecha, cliente, transporte, ciudad, items, unidad, tipo, picker, fechaP, ctrl, inicioP, finP, inicioC, finC, fechaC, obs, estado, usuario, vendedor)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
                 `, [p.id, p.n, p.ped, p.fecha, p.cliente, p.transporte, p.ciudad, p.items, p.unidad, p.tipo, p.picker, p.fechaP, p.ctrl, p.inicioP, p.finP, p.inicioC, p.finC, p.fechaC, p.obs, p.estado, p.usuario, p.vendedor]);
             }
-            await db.exec('COMMIT');
+            await client.query('COMMIT');
             res.json({ success: true, restoredCount: pedidos.length });
         } catch (err) {
-            await db.exec('ROLLBACK');
+            await client.query('ROLLBACK');
             throw err;
+        } finally {
+            client.release();
         }
     } catch (error) {
         res.status(500).json({ error: error.message });
