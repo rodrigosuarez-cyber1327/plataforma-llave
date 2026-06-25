@@ -54,7 +54,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .banner svg{flex-shrink:0;}
 
 /* MÉTRICAS */
-.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px;}
+.metrics{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin-bottom:20px;}
 .mc{background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);padding:16px 18px;border-top:3px solid var(--border);}
 .mc.total{border-top-color:#1A4FA8;}
 .mc.danger{border-top-color:var(--danger);}
@@ -70,6 +70,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .mc.ok .mc-val{color:var(--ok);}
 .mc.ctrl .mc-val{color:#7B3FBB;}
 .mc.hoy .mc-val{color:#0891B2;}
+.mc.desp{border-top-color:#059669;}
+.mc.desp .mc-val{color:#059669;}
 
 /* LEYENDAS */
 .leyenda-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:9px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;}

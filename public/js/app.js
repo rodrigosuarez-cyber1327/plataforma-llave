@@ -91,12 +91,14 @@ function renderTable(){
   const okC=activos.filter(p=>getAlerta(p)==='ok').length;
   const hoyStr=new Date().toISOString().slice(0,10);
   const hoyCount=pedidos.filter(p=>p.fecha&&p.fecha.slice(0,10)===hoyStr).length;
+  const despHoy=pedidos.filter(p=>p.fechaDespacho&&p.fechaDespacho.slice(0,10)===hoyStr).length;
   document.getElementById('m-total').textContent=pedidos.length;
   document.getElementById('m-venc').textContent=venc;
   document.getElementById('m-warn').textContent=warn;
   document.getElementById('m-ok').textContent=okC;
   document.getElementById('m-ctrl').textContent=new Set(pedidos.map(p=>p.ctrl).filter(Boolean)).size;
   document.getElementById('m-hoy').textContent=hoyCount;
+  document.getElementById('m-desp').textContent=despHoy;
 
   const bw=document.getElementById('banner-wrap');
   if(venc>0) bw.innerHTML=`<div class="banner danger"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>${venc} orden${venc>1?'es':''} vencida${venc>1?'s':''}</strong> — Superaron las 72 hs sin despachar. Requieren atención inmediata.</div>`;
@@ -346,8 +348,37 @@ function abrirReporte(){
     mapaCtrlH[p.ctrl].unidades += (parseInt(p.unidad)||0);
   });
 
-  const diasMap = {};
+  // Comparativo ingresos vs despachos por día
   const diasNom = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const flujoMap = {};
+  pedidos.forEach(p=>{
+    if(!p.fecha) return;
+    const d = new Date(p.fecha.replace(' ','T'));
+    const isoKey = p.fecha.slice(0,10);
+    if(!flujoMap[isoKey]) flujoMap[isoKey]={label: fmtFecha(d)+' '+diasNom[d.getDay()], ingresos:0, despachos:0};
+    flujoMap[isoKey].ingresos++;
+    if(p.fechaDespacho) {
+      const kd = p.fechaDespacho.slice(0,10);
+      if(!flujoMap[kd]) flujoMap[kd]={label: fmtFecha(new Date(kd+'T00:00:00'))+' '+diasNom[new Date(kd+'T00:00:00').getDay()], ingresos:0, despachos:0};
+      flujoMap[kd].despachos++;
+    }
+  });
+  const flujoRows = Object.entries(flujoMap)
+    .sort((a,b)=>b[0].localeCompare(a[0]))
+    .map(([,v])=>{
+      const diff = v.ingresos - v.despachos;
+      const diffColor = diff > 0 ? '#C92B2B' : diff < 0 ? '#1E9A42' : '#6B7280';
+      const diffLabel = diff > 0 ? `+${diff} pendientes` : diff < 0 ? `${diff} extras` : '= equilibrio';
+      return `<tr>
+        <td><strong>${v.label}</strong></td>
+        <td style="text-align:center;color:#0891B2;font-weight:700">${v.ingresos}</td>
+        <td style="text-align:center;color:#059669;font-weight:700">${v.despachos}</td>
+        <td style="text-align:center;font-weight:700;color:${diffColor}">${diffLabel}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="4" style="color:var(--text3);text-align:center;padding:12px">Sin datos</td></tr>';
+
+  // Pedidos por día (histórico - solo ingresos, items, unidades)
+  const diasMap = {};
   pedidos.forEach(p=>{
     if(!p.fecha) return;
     const d = new Date(p.fecha.replace(' ','T'));
@@ -395,6 +426,18 @@ function abrirReporte(){
         <div class="rep-card"><div class="rep-card-val" style="color:var(--express)">⚡ ${express10}</div><div class="rep-card-lbl">Express (10 ítems)</div></div>
         <div class="rep-card"><div class="rep-card-val">${totalPed>0?Math.round(totalItems/totalPed):0}</div><div class="rep-card-lbl">Ítems prom./pedido</div></div>
       </div>
+    </div>
+    <div class="rep-section">
+      <div class="rep-section-title">📊 Ingresos vs Despachos por día</div>
+      <table class="rep-table">
+        <thead><tr>
+          <th>Día</th>
+          <th style="text-align:center;color:#0891B2">📥 Ingresos</th>
+          <th style="text-align:center;color:#059669">📦 Despachos</th>
+          <th style="text-align:center">Balance</th>
+        </tr></thead>
+        <tbody>${flujoRows}</tbody>
+      </table>
     </div>
     <div class="rep-section">
       <div class="rep-section-title">📅 Pedidos por día (histórico)</div>

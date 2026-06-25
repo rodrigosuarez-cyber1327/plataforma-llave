@@ -38,6 +38,20 @@ async function setupDatabase() {
         )
     `);
 
+    // Agregar columna fechaDespacho si no existe (migración)
+    await pool.query(`ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS fechadespacho TEXT`);
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS conteos (
+            id SERIAL PRIMARY KEY,
+            fecha TEXT,
+            marca TEXT,
+            sku TEXT,
+            cantidad INTEGER,
+            contador TEXT
+        )
+    `);
+
     return pool;
 }
 
