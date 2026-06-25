@@ -413,6 +413,30 @@ function abrirReporte(){
     .sort((a,b)=>b[0].localeCompare(a[0]))
     .map(([,v])=>`<tr><td><strong>${v.label}</strong></td><td style="text-align:center">${v.pedidos}</td><td style="text-align:center">${v.items}</td><td style="text-align:center">${v.unidades}</td></tr>`).join('') || '<tr><td colspan="4" style="color:var(--text3);text-align:center;padding:12px">Sin datos</td></tr>';
 
+  // Vendedores — promedio de pedidos por día
+  const mapaVend = {};
+  pedidos.forEach(p=>{
+    const k = (p.vendedor||'').trim(); if(!k) return;
+    const dia = p.fecha ? p.fecha.slice(0,10) : null;
+    if(!mapaVend[k]) mapaVend[k]={ordenes:0, items:0, unidades:0, dias:new Set()};
+    mapaVend[k].ordenes++;
+    mapaVend[k].items += (p.items||0);
+    mapaVend[k].unidades += (parseInt(p.unidad)||0);
+    if(dia) mapaVend[k].dias.add(dia);
+  });
+  const vendedorRows = Object.entries(mapaVend)
+    .sort((a,b)=>b[1].ordenes-a[1].ordenes)
+    .map(([n,v])=>{
+      const prom = v.dias.size>0 ? (v.ordenes/v.dias.size).toFixed(1) : '—';
+      return `<tr>
+        <td><strong style="color:#7B3FBB">${n}</strong></td>
+        <td style="text-align:center;font-weight:700">${v.ordenes}</td>
+        <td style="text-align:center;font-weight:800;color:#7B3FBB;font-size:14px">${prom}</td>
+        <td style="text-align:center">${v.items}</td>
+        <td style="text-align:center">${v.unidades}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="5" style="color:var(--text3);text-align:center;padding:12px">Sin datos de vendedor cargados</td></tr>';
+
   document.getElementById('rep-title').textContent = 'Reporte Semanal · La Llave';
   document.getElementById('rep-sub').textContent = titulo;
   document.getElementById('rep-body').innerHTML = `
@@ -444,6 +468,19 @@ function abrirReporte(){
       <table class="rep-table">
         <thead><tr><th>Día</th><th style="text-align:center">Pedidos</th><th style="text-align:center">Ítems</th><th style="text-align:center">Unidades</th></tr></thead>
         <tbody>${diaRows}</tbody>
+      </table>
+    </div>
+    <div class="rep-section">
+      <div class="rep-section-title">🛒 Vendedores — Promedio de pedidos por día</div>
+      <table class="rep-table">
+        <thead><tr>
+          <th>Vendedor</th>
+          <th style="text-align:center">Total órdenes</th>
+          <th style="text-align:center;color:#7B3FBB">Prom. / día</th>
+          <th style="text-align:center">Ítems</th>
+          <th style="text-align:center">Unidades</th>
+        </tr></thead>
+        <tbody>${vendedorRows}</tbody>
       </table>
     </div>
     <div class="rep-section">
