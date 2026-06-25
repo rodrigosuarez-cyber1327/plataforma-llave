@@ -17,12 +17,14 @@ function calcPlazo(f){
   const sig=new Date(d); sig.setDate(sig.getDate()+1); sig.setHours(8,0,0,0);
   return new Date(sig.getTime()+72*3600000);
 }
-function getAlerta(f){
-  const p=calcPlazo(f); if(!p) return 'ok';
-  const r=(p-new Date())/3600000;
+function getAlerta(p){
+  if(p.estado==='Completada') return 'completada';
+  const plazo=calcPlazo(p.fecha); if(!plazo) return 'ok';
+  const r=(plazo-new Date())/3600000;
   if(r<0) return 'vencida'; if(r<=24) return 'critica'; if(r<=48) return 'atencion'; return 'ok';
 }
 function aStyle(t){
+  if(t==='completada') return {bar:'#9CA3AF',cls:'tb-comp',dot:'#9CA3AF',label:'Completada'};
   if(t==='vencida') return {bar:'#C92B2B',cls:'tb-danger',dot:'var(--danger)',label:'Vencida'};
   if(t==='critica') return {bar:'#D47800',cls:'tb-warn',dot:'var(--warn)',label:'Crítica'};
   if(t==='atencion') return {bar:'#B8A000',cls:'tb-caut',dot:'var(--caut)',label:'Atención'};
@@ -79,18 +81,22 @@ function renderTable(){
 
   const fil=pedidos.filter(p=>{
     const txt=[p.cliente,String(p.n),String(p.ped),p.ciudad,p.ctrl,p.picker,p.transporte,p.obs].join(' ').toLowerCase();
-    const al=getAlerta(p.fecha);
+    const al=getAlerta(p);
     return(!q||txt.includes(q))&&(!fe||p.estado===fe)&&(!fa||al===fa)&&(!fc||p.ctrl===fc)&&(!ft||p.transporte===ft);
   });
 
-  const venc=pedidos.filter(p=>getAlerta(p.fecha)==='vencida').length;
-  const warn=pedidos.filter(p=>['critica','atencion'].includes(getAlerta(p.fecha))).length;
-  const okC=pedidos.filter(p=>getAlerta(p.fecha)==='ok').length;
+  const activos=pedidos.filter(p=>p.estado!=='Completada');
+  const venc=activos.filter(p=>getAlerta(p)==='vencida').length;
+  const warn=activos.filter(p=>['critica','atencion'].includes(getAlerta(p))).length;
+  const okC=activos.filter(p=>getAlerta(p)==='ok').length;
+  const hoyStr=new Date().toISOString().slice(0,10);
+  const hoyCount=pedidos.filter(p=>p.fecha&&p.fecha.slice(0,10)===hoyStr).length;
   document.getElementById('m-total').textContent=pedidos.length;
   document.getElementById('m-venc').textContent=venc;
   document.getElementById('m-warn').textContent=warn;
   document.getElementById('m-ok').textContent=okC;
   document.getElementById('m-ctrl').textContent=new Set(pedidos.map(p=>p.ctrl).filter(Boolean)).size;
+  document.getElementById('m-hoy').textContent=hoyCount;
 
   const bw=document.getElementById('banner-wrap');
   if(venc>0) bw.innerHTML=`<div class="banner danger"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>${venc} orden${venc>1?'es':''} vencida${venc>1?'s':''}</strong> — Superaron las 72 hs sin despachar. Requieren atención inmediata.</div>`;
@@ -101,7 +107,7 @@ function renderTable(){
   if(!fil.length){tbody.innerHTML='<tr><td colspan="20" class="empty-td">No se encontraron resultados para los filtros aplicados.</td></tr>';return;}
 
   tbody.innerHTML=fil.map(p=>{
-    const al=getAlerta(p.fecha); const as=aStyle(al);
+    const al=getAlerta(p); const as=aStyle(al);
     const tc=tClass(p.transporte);
     const fecha=p.fecha?p.fecha.slice(0,16):'—';
     const cli=p.cliente.length>22?p.cliente.slice(0,22)+'…':p.cliente;
@@ -117,7 +123,7 @@ function renderTable(){
       <td><span class="num-bold">${p.n}</span></td>
       <td style="color:var(--text2)">${p.ped}</td>
       <td style="font-size:11px;color:var(--text2)">${fecha}</td>
-      <td><span class="tbadge ${as.cls}"><span class="td" style="background:${as.dot}"></span>${tiempoStr(p.fecha)}</span></td>
+      <td>${al==='completada'?`<span class="tbadge tb-comp">✓</span>`:`<span class="tbadge ${as.cls}"><span class="td" style="background:${as.dot}"></span>${tiempoStr(p.fecha)}</span>`}</td>
       <td><span class="${epClass(p.estado)}">${p.estado}</span></td>
       <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;font-size:12px;font-weight:500">${cli}</td>
       <td><span class="tc ${tc.cls}"><span class="td" style="background:${tc.dot}"></span>${transp}</span></td>
@@ -140,7 +146,7 @@ function renderTable(){
 
 function verDetalle(id){
   const p=pedidos.find(x=>x.id===id); if(!p) return;
-  const al=getAlerta(p.fecha); const as=aStyle(al);
+  const al=getAlerta(p); const as=aStyle(al);
   const tc=tClass(p.transporte);
   const plazo=calcPlazo(p.fecha);
   const ps=plazo?plazo.toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
@@ -215,8 +221,10 @@ async function guardarDetalle(id){
     items: parseInt(document.getElementById('e-items').value)||0
   };
 
+  console.log('Guardando orden', id, updatedData);
   try {
     await axios.put(`/api/pedidos/${id}`, updatedData);
+    toast('Cambios guardados ✓');
     await init();
     cerrar('mod-det');
   } catch(e) {
@@ -274,6 +282,8 @@ async function guardarNuevo(){
 }
 
 function cerrar(id){document.getElementById(id).classList.remove('open');}
+function cerrarOv(id,e){if(e.target===document.getElementById(id))cerrar(id);}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2500);}
 
 function getInicioSemana(){
   const hoy = new Date();
@@ -338,13 +348,14 @@ function abrirReporte(){
 
   const diasMap = {};
   const diasNom = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-  semana.forEach(p=>{
+  pedidos.forEach(p=>{
+    if(!p.fecha) return;
     const d = new Date(p.fecha.replace(' ','T'));
-    const key = fmtFecha(d) + ' ' + diasNom[d.getDay()];
-    if(!diasMap[key]) diasMap[key]={pedidos:0,items:0,unidades:0};
-    diasMap[key].pedidos++;
-    diasMap[key].items    += (p.items||0);
-    diasMap[key].unidades += (parseInt(p.unidad)||0);
+    const isoKey = p.fecha.slice(0,10);
+    if(!diasMap[isoKey]) diasMap[isoKey]={label: fmtFecha(d)+' '+diasNom[d.getDay()], pedidos:0,items:0,unidades:0};
+    diasMap[isoKey].pedidos++;
+    diasMap[isoKey].items    += (p.items||0);
+    diasMap[isoKey].unidades += (parseInt(p.unidad)||0);
   });
 
   const pickerRows = Object.entries(mapaPickerH).sort((a,b)=>b[1].ordenes-a[1].ordenes)
@@ -368,7 +379,8 @@ function abrirReporte(){
       </tr>`).join('') || '<tr><td colspan="5" style="color:var(--text3);text-align:center;padding:12px">Sin datos cargados aún</td></tr>';
 
   const diaRows = Object.entries(diasMap)
-    .map(([d,v])=>`<tr><td><strong>${d}</strong></td><td style="text-align:center">${v.pedidos}</td><td style="text-align:center">${v.items}</td><td style="text-align:center">${v.unidades}</td></tr>`).join('') || '<tr><td colspan="4" style="color:var(--text3);text-align:center;padding:12px">Sin datos</td></tr>';
+    .sort((a,b)=>b[0].localeCompare(a[0]))
+    .map(([,v])=>`<tr><td><strong>${v.label}</strong></td><td style="text-align:center">${v.pedidos}</td><td style="text-align:center">${v.items}</td><td style="text-align:center">${v.unidades}</td></tr>`).join('') || '<tr><td colspan="4" style="color:var(--text3);text-align:center;padding:12px">Sin datos</td></tr>';
 
   document.getElementById('rep-title').textContent = 'Reporte Semanal · La Llave';
   document.getElementById('rep-sub').textContent = titulo;
@@ -385,7 +397,7 @@ function abrirReporte(){
       </div>
     </div>
     <div class="rep-section">
-      <div class="rep-section-title">📅 Pedidos por día</div>
+      <div class="rep-section-title">📅 Pedidos por día (histórico)</div>
       <table class="rep-table">
         <thead><tr><th>Día</th><th style="text-align:center">Pedidos</th><th style="text-align:center">Ítems</th><th style="text-align:center">Unidades</th></tr></thead>
         <tbody>${diaRows}</tbody>

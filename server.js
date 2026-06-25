@@ -39,7 +39,16 @@ setupDatabase().then(database => {
 app.get('/api/pedidos', async (req, res) => {
     try {
         const { rows } = await db.query('SELECT * FROM pedidos ORDER BY id DESC');
-        res.json(rows);
+        const mapped = rows.map(r => ({
+            ...r,
+            fechaP:  r.fechap  ?? r.fechaP,
+            inicioP: r.iniciop ?? r.inicioP,
+            finP:    r.finp    ?? r.finP,
+            inicioC: r.inicioc ?? r.inicioC,
+            finC:    r.finc    ?? r.finC,
+            fechaC:  r.fechac  ?? r.fechaC,
+        }));
+        res.json(mapped);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -66,6 +75,7 @@ app.put('/api/pedidos/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { picker, fechaP, inicioP, finP, ctrl, inicioC, finC, fechaC, estado, items } = req.body;
+        console.log(`PUT /api/pedidos/${id} →`, { picker, fechaP, inicioP, finP, ctrl, inicioC, finC, fechaC, estado, items });
         
         await db.query(`
             UPDATE pedidos 
@@ -117,6 +127,41 @@ app.post('/api/pedidos/batch', checkSecret, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+// ── CONTEOS DE STOCK ──────────────────────────────────────────────────────────
+
+app.get('/api/conteos', async (req, res) => {
+    try {
+        const { rows } = await db.query('SELECT * FROM conteos ORDER BY id DESC');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/conteos', async (req, res) => {
+    try {
+        const { fecha, marca, sku, cantidad, contador } = req.body;
+        const result = await db.query(
+            'INSERT INTO conteos (fecha, marca, sku, cantidad, contador) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+            [fecha, marca, sku, cantidad, contador]
+        );
+        res.status(201).json({ id: result.rows[0].id, ...req.body });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete('/api/conteos/:id', async (req, res) => {
+    try {
+        await db.query('DELETE FROM conteos WHERE id = $1', [req.params.id]);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Restore whole database (Protected, used by restore.js)
 app.post('/api/pedidos/restore', checkSecret, async (req, res) => {
