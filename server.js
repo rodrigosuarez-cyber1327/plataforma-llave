@@ -41,12 +41,14 @@ app.get('/api/pedidos', async (req, res) => {
         const { rows } = await db.query('SELECT * FROM pedidos ORDER BY id DESC');
         const mapped = rows.map(r => ({
             ...r,
-            fechaP:       r.fechap       ?? r.fechaP,
-            inicioP:      r.iniciop      ?? r.inicioP,
-            finP:         r.finp         ?? r.finP,
-            inicioC:      r.inicioc      ?? r.inicioC,
-            finC:         r.finc         ?? r.finC,
-            fechaC:       r.fechac       ?? r.fechaC,
+            fechaP:        r.fechap        ?? r.fechaP,
+            inicioP:       r.iniciop       ?? r.inicioP,
+            finP:          r.finp          ?? r.finP,
+            fechaFinP:     r.fechafinp     ?? null,
+            inicioC:       r.inicioc       ?? r.inicioC,
+            finC:          r.finc          ?? r.finC,
+            fechaC:        r.fechac        ?? r.fechaC,
+            fechaFinC:     r.fechafinc     ?? null,
             fechaDespacho: r.fechadespacho ?? null,
         }));
         res.json(mapped);
@@ -75,8 +77,8 @@ app.post('/api/pedidos', async (req, res) => {
 app.put('/api/pedidos/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { picker, fechaP, inicioP, finP, ctrl, inicioC, finC, fechaC, estado, items } = req.body;
-        console.log(`PUT /api/pedidos/${id} →`, { picker, fechaP, inicioP, finP, ctrl, inicioC, finC, fechaC, estado, items });
+        const { picker, fechaP, inicioP, finP, fechaFinP, ctrl, inicioC, finC, fechaC, fechaFinC, estado, items } = req.body;
+        console.log(`PUT /api/pedidos/${id} →`, { picker, fechaP, inicioP, finP, fechaFinP, ctrl, inicioC, finC, fechaC, fechaFinC, estado, items });
 
         // Si se marca como Completada, registrar fecha de despacho automáticamente
         const { rows: current } = await db.query('SELECT fechadespacho FROM pedidos WHERE id = $1', [id]);
@@ -87,9 +89,11 @@ app.put('/api/pedidos/:id', async (req, res) => {
 
         await db.query(`
             UPDATE pedidos
-            SET picker = $1, fechaP = $2, inicioP = $3, finP = $4, ctrl = $5, inicioC = $6, finC = $7, fechaC = $8, estado = $9, items = $10, fechadespacho = $11
-            WHERE id = $12
-        `, [picker, fechaP, inicioP, finP, ctrl, inicioC, finC, fechaC, estado, items, fechaDespacho, id]);
+            SET picker=$1, fechaP=$2, inicioP=$3, finP=$4, fechafinp=$5,
+                ctrl=$6, inicioC=$7, finC=$8, fechaC=$9, fechafinc=$10,
+                estado=$11, items=$12, fechadespacho=$13
+            WHERE id=$14
+        `, [picker, fechaP, inicioP, finP, fechaFinP||null, ctrl, inicioC, finC, fechaC, fechaFinC||null, estado, items, fechaDespacho, id]);
         
         res.json({ success: true });
     } catch (error) {

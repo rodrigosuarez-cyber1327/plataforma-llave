@@ -169,7 +169,8 @@ function verDetalle(id){
       <div class="sec-title">Picker</div>
       <div class="fgrid" style="grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
         <div class="fg" style="grid-column:1/-1"><label class="flbl">Nombre</label><input class="finp" id="e-picker" value="${p.picker||''}" placeholder="Nombre del picker"></div>
-        <div class="fg"><label class="flbl">Fecha picker</label><input class="finp" id="e-fechaP" type="date" value="${p.fechaP||''}"></div>
+        <div class="fg"><label class="flbl">Fecha inicio</label><input class="finp" id="e-fechaP" type="date" value="${p.fechaP||''}"></div>
+        <div class="fg"><label class="flbl">Fecha fin</label><input class="finp" id="e-fechaFinP" type="date" value="${p.fechaFinP||''}"></div>
         <div class="fg"><label class="flbl">Hora inicio</label><input class="finp" id="e-inicioP" type="time" value="${p.inicioP||''}"></div>
         <div class="fg"><label class="flbl">Hora fin</label><input class="finp" id="e-finP" type="time" value="${p.finP||''}"></div>
       </div>
@@ -178,7 +179,8 @@ function verDetalle(id){
       <div class="sec-title">Controlador</div>
       <div class="fgrid" style="grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
         <div class="fg" style="grid-column:1/-1"><label class="flbl">Nombre</label><input class="finp" id="e-ctrl" value="${p.ctrl||''}" placeholder="Nombre del controlador"></div>
-        <div class="fg"><label class="flbl">Fecha control</label><input class="finp" id="e-fechaC" type="date" value="${p.fechaC||''}"></div>
+        <div class="fg"><label class="flbl">Fecha inicio</label><input class="finp" id="e-fechaC" type="date" value="${p.fechaC||''}"></div>
+        <div class="fg"><label class="flbl">Fecha fin</label><input class="finp" id="e-fechaFinC" type="date" value="${p.fechaFinC||''}"></div>
         <div class="fg"><label class="flbl">Hora inicio</label><input class="finp" id="e-inicioC" type="time" value="${p.inicioC||''}"></div>
         <div class="fg"><label class="flbl">Hora fin</label><input class="finp" id="e-finC" type="time" value="${p.finC||''}"></div>
       </div>
@@ -211,16 +213,18 @@ async function guardarDetalle(id){
   btn.textContent = 'Guardando...';
 
   const updatedData = {
-    picker: document.getElementById('e-picker').value.trim(),
-    fechaP: document.getElementById('e-fechaP').value,
-    inicioP: document.getElementById('e-inicioP').value,
-    finP: document.getElementById('e-finP').value,
-    ctrl: document.getElementById('e-ctrl').value.trim(),
-    inicioC: document.getElementById('e-inicioC').value,
-    finC: document.getElementById('e-finC').value,
-    fechaC: document.getElementById('e-fechaC').value,
-    estado: document.getElementById('e-estado').value,
-    items: parseInt(document.getElementById('e-items').value)||0
+    picker:    document.getElementById('e-picker').value.trim(),
+    fechaP:    document.getElementById('e-fechaP').value,
+    fechaFinP: document.getElementById('e-fechaFinP').value,
+    inicioP:   document.getElementById('e-inicioP').value,
+    finP:      document.getElementById('e-finP').value,
+    ctrl:      document.getElementById('e-ctrl').value.trim(),
+    fechaC:    document.getElementById('e-fechaC').value,
+    fechaFinC: document.getElementById('e-fechaFinC').value,
+    inicioC:   document.getElementById('e-inicioC').value,
+    finC:      document.getElementById('e-finC').value,
+    estado:    document.getElementById('e-estado').value,
+    items:     parseInt(document.getElementById('e-items').value)||0
   };
 
   console.log('Guardando orden', id, updatedData);

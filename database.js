@@ -38,8 +38,10 @@ async function setupDatabase() {
         )
     `);
 
-    // Agregar columna fechaDespacho si no existe (migración)
+    // Migraciones de columnas nuevas
     await pool.query(`ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS fechadespacho TEXT`);
+    await pool.query(`ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS fechafinp TEXT`);
+    await pool.query(`ALTER TABLE pedidos ADD COLUMN IF NOT EXISTS fechafinc TEXT`);
 
     await pool.query(`
         CREATE TABLE IF NOT EXISTS conteos (
