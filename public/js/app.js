@@ -532,6 +532,160 @@ function descargarReporte(titulo){
 
 
 
+// ── REPORTE MENSUAL ───────────────────────────────────────────────────────────
+
+let reporteMesDate = new Date();
+
+function cambiarMes(delta){
+  reporteMesDate = new Date(reporteMesDate.getFullYear(), reporteMesDate.getMonth()+delta, 1);
+  abrirReporteMensual();
+}
+
+function abrirReporteMensual(){
+  const año = reporteMesDate.getFullYear();
+  const mes  = reporteMesDate.getMonth();
+  const inicio = new Date(año, mes, 1, 0, 0, 0);
+  const fin    = new Date(año, mes+1, 0, 23, 59, 59);
+  const MESES  = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const DIAS   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const titulo = `${MESES[mes]} ${año}`;
+  const fmtF   = d => d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
+
+  const delMes = pedidos.filter(p=>{
+    if(!p.fecha) return false;
+    const d=new Date(p.fecha.replace(' ','T'));
+    return d>=inicio && d<=fin;
+  });
+
+  const totalPed      = delMes.length;
+  const totalItems    = delMes.reduce((s,p)=>s+(p.items||0),0);
+  const totalUnidades = delMes.reduce((s,p)=>s+(parseInt(p.unidad)||0),0);
+  const completadas   = delMes.filter(p=>p.estado==='Completada').length;
+  const express10     = delMes.filter(p=>p.items===10).length;
+
+  // Picker
+  const mPick={};
+  delMes.forEach(p=>{
+    const k=(p.picker||'').trim(); if(!k) return;
+    if(!mPick[k]) mPick[k]={horas:0,ordenes:0,items:0,unidades:0};
+    mPick[k].horas+=calcHoras(p.inicioP,p.finP); mPick[k].ordenes++;
+    mPick[k].items+=(p.items||0); mPick[k].unidades+=(parseInt(p.unidad)||0);
+  });
+
+  // Controlador
+  const mCtrl={};
+  delMes.forEach(p=>{
+    const k=(p.ctrl||'').trim(); if(!k) return;
+    if(!mCtrl[k]) mCtrl[k]={horas:0,ordenes:0,items:0,unidades:0};
+    mCtrl[k].horas+=calcHoras(p.inicioC,p.finC); mCtrl[k].ordenes++;
+    mCtrl[k].items+=(p.items||0); mCtrl[k].unidades+=(parseInt(p.unidad)||0);
+  });
+
+  // Vendedores
+  const mVend={};
+  delMes.forEach(p=>{
+    const k=(p.vendedor||'').trim(); if(!k) return;
+    if(!mVend[k]) mVend[k]={ordenes:0,items:0,unidades:0};
+    mVend[k].ordenes++; mVend[k].items+=(p.items||0); mVend[k].unidades+=(parseInt(p.unidad)||0);
+  });
+
+  // Flujo ingresos vs despachos
+  const flujo={};
+  delMes.forEach(p=>{
+    const d=new Date(p.fecha.replace(' ','T')); const k=p.fecha.slice(0,10);
+    if(!flujo[k]) flujo[k]={label:fmtF(d)+' '+DIAS[d.getDay()],ingresos:0,despachos:0};
+    flujo[k].ingresos++;
+  });
+  pedidos.forEach(p=>{
+    if(!p.fechaDespacho) return;
+    const kd=p.fechaDespacho.slice(0,10);
+    const dD=new Date(kd+'T00:00:00');
+    if(dD<inicio||dD>fin) return;
+    if(!flujo[kd]) flujo[kd]={label:fmtF(dD)+' '+DIAS[dD.getDay()],ingresos:0,despachos:0};
+    flujo[kd].despachos++;
+  });
+
+  const mkRow=(v)=>{const d=v.ingresos-v.despachos;const c=d>0?'#C92B2B':d<0?'#1E9A42':'#6B7280';const l=d>0?`+${d} pendientes`:d<0?`${d} extras`:'= equilibrio';
+    return `<tr><td><strong>${v.label}</strong></td><td style="text-align:center;color:#0891B2;font-weight:700">${v.ingresos}</td><td style="text-align:center;color:#059669;font-weight:700">${v.despachos}</td><td style="text-align:center;font-weight:700;color:${c}">${l}</td></tr>`;};
+
+  const flujoRows   = Object.entries(flujo).sort((a,b)=>b[0].localeCompare(a[0])).map(([,v])=>mkRow(v)).join('')||'<tr><td colspan="4" style="color:var(--text3);text-align:center;padding:12px">Sin datos</td></tr>';
+  const pickerRows  = Object.entries(mPick).sort((a,b)=>b[1].ordenes-a[1].ordenes).map(([n,v])=>`<tr><td><strong>${n}</strong></td><td style="text-align:center">${v.ordenes}</td><td style="text-align:center">${v.items}</td><td style="text-align:center">${v.unidades}</td><td style="text-align:center;color:#B04800;font-weight:700">${fmtHoras(v.horas)}</td></tr>`).join('')||'<tr><td colspan="5" style="color:var(--text3);text-align:center;padding:12px">Sin datos</td></tr>';
+  const ctrlRows    = Object.entries(mCtrl).sort((a,b)=>b[1].ordenes-a[1].ordenes).map(([n,v])=>`<tr><td><strong>${n}</strong></td><td style="text-align:center">${v.ordenes}</td><td style="text-align:center">${v.items}</td><td style="text-align:center">${v.unidades}</td><td style="text-align:center;color:#1A4FA8;font-weight:700">${fmtHoras(v.horas)}</td></tr>`).join('')||'<tr><td colspan="5" style="color:var(--text3);text-align:center;padding:12px">Sin datos</td></tr>';
+  const vendRows    = Object.entries(mVend).sort((a,b)=>b[1].ordenes-a[1].ordenes).map(([n,v])=>`<tr><td><strong style="color:#7B3FBB">${n}</strong></td><td style="text-align:center;font-weight:700">${v.ordenes}</td><td style="text-align:center">${v.items}</td><td style="text-align:center">${v.unidades}</td></tr>`).join('')||'<tr><td colspan="4" style="color:var(--text3);text-align:center;padding:12px">Sin datos de vendedor</td></tr>';
+
+  document.getElementById('rep-title').textContent = 'Reporte Mensual · La Llave';
+  document.getElementById('rep-sub').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+      <button onclick="cambiarMes(-1)" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:6px;padding:2px 12px;cursor:pointer;font-size:16px;line-height:1.4">‹</button>
+      <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.95);min-width:130px;text-align:center">${titulo}</span>
+      <button onclick="cambiarMes(1)" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:6px;padding:2px 12px;cursor:pointer;font-size:16px;line-height:1.4">›</button>
+    </div>`;
+
+  document.getElementById('rep-body').innerHTML = `
+    <div class="rep-section">
+      <div class="rep-section-title">Resumen — ${titulo}</div>
+      <div class="rep-grid">
+        <div class="rep-card"><div class="rep-card-val">${totalPed}</div><div class="rep-card-lbl">Pedidos</div></div>
+        <div class="rep-card"><div class="rep-card-val">${totalItems}</div><div class="rep-card-lbl">Ítems totales</div></div>
+        <div class="rep-card"><div class="rep-card-val">${totalUnidades}</div><div class="rep-card-lbl">Unidades totales</div></div>
+        <div class="rep-card"><div class="rep-card-val">${completadas}</div><div class="rep-card-lbl">Completadas</div></div>
+        <div class="rep-card"><div class="rep-card-val" style="color:var(--express)">⚡ ${express10}</div><div class="rep-card-lbl">Express (10 ítems)</div></div>
+        <div class="rep-card"><div class="rep-card-val">${totalPed>0?Math.round(totalItems/totalPed):0}</div><div class="rep-card-lbl">Ítems prom./pedido</div></div>
+      </div>
+    </div>
+    <div class="rep-section">
+      <div class="rep-section-title">📊 Ingresos vs Despachos por día</div>
+      <table class="rep-table">
+        <thead><tr><th>Día</th><th style="text-align:center;color:#0891B2">📥 Ingresos</th><th style="text-align:center;color:#059669">📦 Despachos</th><th style="text-align:center">Balance</th></tr></thead>
+        <tbody>${flujoRows}</tbody>
+      </table>
+    </div>
+    <div class="rep-section">
+      <div class="rep-section-title">🛒 Vendedores</div>
+      <table class="rep-table">
+        <thead><tr><th>Vendedor</th><th style="text-align:center">Órdenes</th><th style="text-align:center">Ítems</th><th style="text-align:center">Unidades</th></tr></thead>
+        <tbody>${vendRows}</tbody>
+      </table>
+    </div>
+    <div class="rep-section">
+      <div class="rep-section-title">🟠 Piqueo</div>
+      <table class="rep-table">
+        <thead><tr><th>Picker</th><th style="text-align:center">Órdenes</th><th style="text-align:center">Ítems</th><th style="text-align:center">Unidades</th><th style="text-align:center">Horas</th></tr></thead>
+        <tbody>${pickerRows}</tbody>
+      </table>
+    </div>
+    <div class="rep-section">
+      <div class="rep-section-title">🔵 Control</div>
+      <table class="rep-table">
+        <thead><tr><th>Controlador</th><th style="text-align:center">Órdenes</th><th style="text-align:center">Ítems</th><th style="text-align:center">Unidades</th><th style="text-align:center">Horas</th></tr></thead>
+        <tbody>${ctrlRows}</tbody>
+      </table>
+    </div>
+    <div class="factions">
+      <button class="btn-dl" onclick="descargarReporteMensual('${titulo}')">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descargar Excel
+      </button>
+      <button class="btn-cancel" onclick="cerrar('mod-reporte')">Cerrar</button>
+    </div>`;
+  document.getElementById('mod-reporte').classList.add('open');
+}
+
+function descargarReporteMensual(titulo){
+  const año=reporteMesDate.getFullYear(), mes=reporteMesDate.getMonth();
+  const inicio=new Date(año,mes,1), fin=new Date(año,mes+1,0,23,59,59);
+  const delMes=pedidos.filter(p=>{if(!p.fecha)return false;const d=new Date(p.fecha.replace(' ','T'));return d>=inicio&&d<=fin;});
+  const ws_data=[
+    ['N° Orden','N° Pedido','Fecha','Cliente','Transporte','Ciudad','Estado','Ítems','Unidades','Vendedor','Picker','Fecha Inicio Picker','Fecha Fin Picker','Inicio Picker','Fin Picker','Controlador','Fecha Inicio Ctrl','Fecha Fin Ctrl','Inicio Ctrl','Fin Ctrl'],
+    ...delMes.map(p=>[p.n,p.ped,p.fecha,p.cliente,p.transporte,p.ciudad,p.estado,p.items,p.unidad||'',p.vendedor||'',p.picker||'',p.fechaP||'',p.fechaFinP||'',p.inicioP||'',p.finP||'',p.ctrl||'',p.fechaC||'',p.fechaFinC||'',p.inicioC||'',p.finC||''])
+  ];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(ws_data),'Reporte Mensual');
+  XLSX.writeFile(wb,`Reporte_Mensual_LaLlave_${titulo.replace(' ','_')}.xlsx`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function cerrarClickFuera(id,e)
-{if(e.target===document.getElementById(id))cerrar(id);} 
+{if(e.target===document.getElementById(id))cerrar(id);}
 init();
