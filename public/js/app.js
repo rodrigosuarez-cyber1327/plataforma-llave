@@ -10,12 +10,31 @@ function tClass(t){ return TCOLORES[t] || TCOLORES['']; }
 
 let pedidos = [];
 
+function esDiaHabil(d){ const dow=d.getDay(); return dow!==0&&dow!==6; }
+
 function calcPlazo(f){
   if(!f) return null;
-  const d=new Date(f.replace(' ','T')); const h=d.getHours();
-  if(h>=8&&h<15){ return new Date(d.getTime()+72*3600000); }
-  const sig=new Date(d); sig.setDate(sig.getDate()+1); sig.setHours(8,0,0,0);
-  return new Date(sig.getTime()+72*3600000);
+  const d=new Date(f.replace(' ','T'));
+  const dow=d.getDay();
+
+  // Punto de inicio: si es fin de semana → lunes 8am; si es después de las 15h → próximo día hábil 8am
+  let inicio=new Date(d);
+  if(dow===0||dow===6){
+    while(inicio.getDay()!==1) inicio.setDate(inicio.getDate()+1);
+    inicio.setHours(8,0,0,0);
+  } else if(d.getHours()>=15){
+    inicio.setDate(inicio.getDate()+1);
+    inicio.setHours(8,0,0,0);
+    while(!esDiaHabil(inicio)) inicio.setDate(inicio.getDate()+1);
+  }
+
+  // Sumar 3 días hábiles (lun-vie, sin sábado ni domingo)
+  let plazo=new Date(inicio); let habiles=0;
+  while(habiles<3){
+    plazo.setDate(plazo.getDate()+1);
+    if(esDiaHabil(plazo)) habiles++;
+  }
+  return plazo;
 }
 function getAlerta(p){
   if(p.estado==='Completada') return 'completada';
@@ -101,7 +120,7 @@ function renderTable(){
   document.getElementById('m-desp').textContent=despHoy;
 
   const bw=document.getElementById('banner-wrap');
-  if(venc>0) bw.innerHTML=`<div class="banner danger"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>${venc} orden${venc>1?'es':''} vencida${venc>1?'s':''}</strong> — Superaron las 72 hs sin despachar. Requieren atención inmediata.</div>`;
+  if(venc>0) bw.innerHTML=`<div class="banner danger"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>${venc} orden${venc>1?'es':''} vencida${venc>1?'s':''}</strong> — Superaron los 3 días hábiles sin despachar. Requieren atención inmediata.</div>`;
   else if(warn>0) bw.innerHTML=`<div class="banner warn"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><strong>${warn} orden${warn>1?'es':''} próxima${warn>1?'s':''} a vencer</strong> — Revisalas antes de las 72 hs.</div>`;
   else bw.innerHTML='';
 

@@ -49,7 +49,7 @@
 
   <div class="metrics">
     <div class="mc total"><div class="mc-lbl">Total órdenes</div><div class="mc-val" id="m-total">—</div></div>
-    <div class="mc danger"><div class="mc-lbl">Vencidas +72 hs</div><div class="mc-val" id="m-venc">—</div></div>
+    <div class="mc danger"><div class="mc-lbl">Vencidas +3 días háb.</div><div class="mc-val" id="m-venc">—</div></div>
     <div class="mc warn"><div class="mc-lbl">Por vencer</div><div class="mc-val" id="m-warn">—</div></div>
     <div class="mc ok"><div class="mc-lbl">Al día</div><div class="mc-val" id="m-ok">—</div></div>
     <div class="mc ctrl"><div class="mc-lbl">Controladores</div><div class="mc-val" id="m-ctrl">—</div></div>
@@ -59,10 +59,10 @@
 
   <div class="leyenda-row">
     <span class="ley-lbl">Alertas</span>
-    <span class="ley-item"><span class="ley-dot" style="background:var(--danger)"></span>Vencida (+72 hs)</span>
-    <span class="ley-item"><span class="ley-dot" style="background:var(--warn)"></span>Crítica (48–72 hs)</span>
-    <span class="ley-item"><span class="ley-dot" style="background:var(--caut)"></span>Atención (24–48 hs)</span>
-    <span class="ley-item"><span class="ley-dot" style="background:var(--ok)"></span>Al día (−24 hs)</span>
+    <span class="ley-item"><span class="ley-dot" style="background:var(--danger)"></span>Vencida (+3 días háb.)</span>
+    <span class="ley-item"><span class="ley-dot" style="background:var(--warn)"></span>Crítica (1 día hábil)</span>
+    <span class="ley-item"><span class="ley-dot" style="background:var(--caut)"></span>Atención (2 días háb.)</span>
+    <span class="ley-item"><span class="ley-dot" style="background:var(--ok)"></span>Al día (más de 2 días)</span>
   </div>
 
   <div class="leyenda-row" id="transp-legend">
@@ -83,7 +83,7 @@
     </select>
     <select class="fsel" id="f-alerta" onchange="renderTable()">
       <option value="">Todas las alertas</option>
-      <option value="vencida">Vencidas +72 hs</option>
+      <option value="vencida">Vencidas +3 días háb.</option>
       <option value="critica">Críticas 48–72 hs</option>
       <option value="atencion">Atención 24–48 hs</option>
       <option value="ok">Al día</option>
