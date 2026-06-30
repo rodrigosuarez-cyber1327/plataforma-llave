@@ -391,14 +391,17 @@ function abrirReporte(){
     .map(([,v])=>{
       const diff = v.ingresos - v.despachos;
       const diffColor = diff > 0 ? '#C92B2B' : diff < 0 ? '#1E9A42' : '#6B7280';
-      const diffLabel = diff > 0 ? `+${diff} pendientes` : diff < 0 ? `${diff} extras` : '= equilibrio';
+      const diffLabel = diff > 0 ? `+${diff} pend.` : diff < 0 ? `${diff} extras` : '✓ equilibrio';
+      const pct = v.ingresos > 0 ? Math.round(v.despachos/v.ingresos*100) : 0;
+      const pctColor = pct>=90?'#059669':pct>=70?'#D47800':'#C92B2B';
       return `<tr>
         <td><strong>${v.label}</strong></td>
         <td style="text-align:center;color:#0891B2;font-weight:700">${v.ingresos}</td>
         <td style="text-align:center;color:#059669;font-weight:700">${v.despachos}</td>
         <td style="text-align:center;font-weight:700;color:${diffColor}">${diffLabel}</td>
+        <td style="text-align:center;font-weight:800;color:${pctColor};font-size:13px">${pct}%</td>
       </tr>`;
-    }).join('') || '<tr><td colspan="4" style="color:var(--text3);text-align:center;padding:12px">Sin datos</td></tr>';
+    }).join('') || '<tr><td colspan="5" style="color:var(--text3);text-align:center;padding:12px">Sin datos</td></tr>';
 
   // Pedidos por día (histórico - solo ingresos, items, unidades)
   const diasMap = {};
@@ -482,6 +485,7 @@ function abrirReporte(){
           <th style="text-align:center;color:#0891B2">📥 Ingresos</th>
           <th style="text-align:center;color:#059669">📦 Despachos</th>
           <th style="text-align:center">Balance</th>
+          <th style="text-align:center;color:#7B3FBB">% Cumplimiento</th>
         </tr></thead>
         <tbody>${flujoRows}</tbody>
       </table>
@@ -581,6 +585,8 @@ function abrirReporteMensual(){
   const totalUnidades = delMes.reduce((s,p)=>s+(parseInt(p.unidad)||0),0);
   const completadas   = delMes.filter(p=>p.estado==='Completada').length;
   const express10     = delMes.filter(p=>p.items===10).length;
+  const pctCumplMes   = totalPed>0?Math.round(completadas/totalPed*100):0;
+  const pctColor      = pctCumplMes>=90?'#059669':pctCumplMes>=70?'#D47800':'#C92B2B';
 
   // Picker
   const mPick={};
@@ -624,8 +630,14 @@ function abrirReporteMensual(){
     flujo[kd].despachos++;
   });
 
-  const mkRow=(v)=>{const d=v.ingresos-v.despachos;const c=d>0?'#C92B2B':d<0?'#1E9A42':'#6B7280';const l=d>0?`+${d} pendientes`:d<0?`${d} extras`:'= equilibrio';
-    return `<tr><td><strong>${v.label}</strong></td><td style="text-align:center;color:#0891B2;font-weight:700">${v.ingresos}</td><td style="text-align:center;color:#059669;font-weight:700">${v.despachos}</td><td style="text-align:center;font-weight:700;color:${c}">${l}</td></tr>`;};
+  const mkRow=(v)=>{
+    const d=v.ingresos-v.despachos;
+    const c=d>0?'#C92B2B':d<0?'#1E9A42':'#6B7280';
+    const l=d>0?`+${d} pend.`:d<0?`${d} extras`:'✓ equilibrio';
+    const pct=v.ingresos>0?Math.round(v.despachos/v.ingresos*100):0;
+    const pc=pct>=90?'#059669':pct>=70?'#D47800':'#C92B2B';
+    return `<tr><td><strong>${v.label}</strong></td><td style="text-align:center;color:#0891B2;font-weight:700">${v.ingresos}</td><td style="text-align:center;color:#059669;font-weight:700">${v.despachos}</td><td style="text-align:center;font-weight:700;color:${c}">${l}</td><td style="text-align:center;font-weight:800;color:${pc};font-size:13px">${pct}%</td></tr>`;
+  };
 
   const flujoRows   = Object.entries(flujo).sort((a,b)=>b[0].localeCompare(a[0])).map(([,v])=>mkRow(v)).join('')||'<tr><td colspan="4" style="color:var(--text3);text-align:center;padding:12px">Sin datos</td></tr>';
   const pickerRows  = Object.entries(mPick).sort((a,b)=>b[1].ordenes-a[1].ordenes).map(([n,v])=>`<tr><td><strong>${n}</strong></td><td style="text-align:center">${v.ordenes}</td><td style="text-align:center">${v.items}</td><td style="text-align:center">${v.unidades}</td><td style="text-align:center;color:#B04800;font-weight:700">${fmtHoras(v.horas)}</td></tr>`).join('')||'<tr><td colspan="5" style="color:var(--text3);text-align:center;padding:12px">Sin datos</td></tr>';
@@ -650,12 +662,16 @@ function abrirReporteMensual(){
         <div class="rep-card"><div class="rep-card-val">${completadas}</div><div class="rep-card-lbl">Completadas</div></div>
         <div class="rep-card"><div class="rep-card-val" style="color:var(--express)">⚡ ${express10}</div><div class="rep-card-lbl">Express (10 ítems)</div></div>
         <div class="rep-card"><div class="rep-card-val">${totalPed>0?Math.round(totalItems/totalPed):0}</div><div class="rep-card-lbl">Ítems prom./pedido</div></div>
+        <div class="rep-card" style="grid-column:1/-1;background:linear-gradient(135deg,#F5EEFF,#EDE0FF);border:1.5px solid #C9A0F0">
+          <div class="rep-card-val" style="color:${pctColor};font-size:36px">${pctCumplMes}%</div>
+          <div class="rep-card-lbl">% Cumplimiento del mes (completadas / total ingresos)</div>
+        </div>
       </div>
     </div>
     <div class="rep-section">
       <div class="rep-section-title">📊 Ingresos vs Despachos por día</div>
       <table class="rep-table">
-        <thead><tr><th>Día</th><th style="text-align:center;color:#0891B2">📥 Ingresos</th><th style="text-align:center;color:#059669">📦 Despachos</th><th style="text-align:center">Balance</th></tr></thead>
+        <thead><tr><th>Día</th><th style="text-align:center;color:#0891B2">📥 Ingresos</th><th style="text-align:center;color:#059669">📦 Despachos</th><th style="text-align:center">Balance</th><th style="text-align:center;color:#7B3FBB">% Cumpl.</th></tr></thead>
         <tbody>${flujoRows}</tbody>
       </table>
     </div>
