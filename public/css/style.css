@@ -272,3 +272,12 @@ tr.express-row:hover{background:#F0E8FF!important;}
 /* Confirm delete inline */
 .btn-del{background:none;border:none;color:#C0C8DC;cursor:pointer;padding:4px 6px;border-radius:4px;font-size:13px;transition:color .15s;}
 .btn-del:hover{color:var(--danger);background:#FFF0F0;}
+
+/* Informe Gerencial */
+.btn-ger{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#312E81,#5B21B6);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .15s;}
+.btn-ger:hover{opacity:.88;}
+.ger-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.ger-kpi{background:#fff;border:1.5px solid #E5E7EB;border-top:4px solid;border-radius:10px;padding:16px;text-align:center;}
+.ger-kpi-val{font-size:36px;font-weight:900;line-height:1.1;}
+.ger-kpi-lbl{font-size:12px;color:#6B7280;font-weight:600;margin-top:4px;}
+.ger-kpi-sub{font-size:11px;color:#9CA3AF;margin-top:2px;}

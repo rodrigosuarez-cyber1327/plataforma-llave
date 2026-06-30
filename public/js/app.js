@@ -719,6 +719,221 @@ function descargarReporteMensual(titulo){
   XLSX.writeFile(wb,`Reporte_Mensual_LaLlave_${titulo.replace(' ','_')}.xlsx`);
 }
 
+// ── INFORME GERENCIAL ─────────────────────────────────────────────────────────
+
+let reporteGerDate = new Date();
+
+function cambiarMesGer(delta){
+  reporteGerDate = new Date(reporteGerDate.getFullYear(), reporteGerDate.getMonth()+delta, 1);
+  abrirInformeGerencial();
+}
+
+function _gerFlujo(inicio, fin){
+  const DIAS=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const flujo={};
+  pedidos.forEach(p=>{
+    if(!p.fecha) return;
+    const d=new Date(p.fecha.replace(' ','T'));
+    if(d<inicio||d>fin) return;
+    const k=p.fecha.slice(0,10);
+    if(!flujo[k]) flujo[k]={label:`${k.slice(8,10)}/${k.slice(5,7)}`,dia:DIAS[d.getDay()],ingresos:0,despachos:0};
+    flujo[k].ingresos++;
+  });
+  pedidos.forEach(p=>{
+    if(!p.fechaDespacho) return;
+    const kd=p.fechaDespacho.slice(0,10);
+    const dD=new Date(kd+'T00:00:00');
+    if(dD<inicio||dD>fin) return;
+    if(!flujo[kd]) flujo[kd]={label:`${kd.slice(8,10)}/${kd.slice(5,7)}`,dia:DIAS[dD.getDay()],ingresos:0,despachos:0};
+    flujo[kd].despachos++;
+  });
+  return Object.entries(flujo).sort((a,b)=>a[0].localeCompare(b[0]));
+}
+
+function abrirInformeGerencial(){
+  const año=reporteGerDate.getFullYear(), mes=reporteGerDate.getMonth();
+  const inicio=new Date(año,mes,1,0,0,0), fin=new Date(año,mes+1,0,23,59,59);
+  const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const titulo=`${MESES[mes]} ${año}`;
+
+  const delMes=pedidos.filter(p=>{if(!p.fecha)return false;const d=new Date(p.fecha.replace(' ','T'));return d>=inicio&&d<=fin;});
+  const totalPed=delMes.length;
+  const completadas=delMes.filter(p=>p.estado==='Completada').length;
+  const pendientes=totalPed-completadas;
+  const pctCumpl=totalPed>0?Math.round(completadas/totalPed*100):0;
+  const pctColor=pctCumpl>=90?'#059669':pctCumpl>=70?'#D47800':'#C92B2B';
+
+  const sorted=_gerFlujo(inicio,fin);
+  const totalIng=sorted.reduce((s,[,v])=>s+v.ingresos,0);
+  const totalDes=sorted.reduce((s,[,v])=>s+v.despachos,0);
+  const balTotal=totalIng-totalDes;
+  const balColor=balTotal>0?'#C92B2B':balTotal<0?'#1E9A42':'#6B7280';
+  const dias=sorted.length||1;
+  const promIng=(totalIng/dias).toFixed(1), promDes=(totalDes/dias).toFixed(1);
+
+  const chartLabels=sorted.map(([,v])=>`${v.label} ${v.dia}`);
+  const dataIng=sorted.map(([,v])=>v.ingresos);
+  const dataDes=sorted.map(([,v])=>v.despachos);
+
+  const tableRows=[...sorted].reverse().map(([,v])=>{
+    const d=v.ingresos-v.despachos;
+    const c=d>0?'#C92B2B':d<0?'#1E9A42':'#6B7280';
+    const dl=d>0?`+${d} pend.`:d<0?`${Math.abs(d)} extras`:'✓ ok';
+    const pct=v.ingresos>0?Math.round(v.despachos/v.ingresos*100):0;
+    const pc=pct>=90?'#059669':pct>=70?'#D47800':'#C92B2B';
+    return `<tr><td><strong>${v.label}</strong> <span style="color:#9CA3AF;font-size:11px">${v.dia}</span></td><td style="text-align:center;color:#0891B2;font-weight:700">${v.ingresos}</td><td style="text-align:center;color:#059669;font-weight:700">${v.despachos}</td><td style="text-align:center;font-weight:700;color:${c}">${dl}</td><td style="text-align:center;font-weight:800;color:${pc}">${pct}%</td></tr>`;
+  }).join('')||'<tr><td colspan="5" style="text-align:center;color:#9CA3AF;padding:14px">Sin datos para este período</td></tr>';
+
+  document.getElementById('ger-title').textContent='Informe Gerencial · La Llave';
+  document.getElementById('ger-sub').innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-top:6px"><button onclick="cambiarMesGer(-1)" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:6px;padding:2px 12px;cursor:pointer;font-size:16px;line-height:1.4">‹</button><span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.95);min-width:130px;text-align:center">${titulo}</span><button onclick="cambiarMesGer(1)" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:6px;padding:2px 12px;cursor:pointer;font-size:16px;line-height:1.4">›</button></div>`;
+
+  document.getElementById('ger-body').innerHTML=`
+    <div class="ger-kpi-grid">
+      <div class="ger-kpi" style="border-top-color:#0891B2"><div class="ger-kpi-val" style="color:#0891B2">${totalIng}</div><div class="ger-kpi-lbl">📥 Ingresos</div><div class="ger-kpi-sub">Prom. ${promIng}/día</div></div>
+      <div class="ger-kpi" style="border-top-color:#059669"><div class="ger-kpi-val" style="color:#059669">${totalDes}</div><div class="ger-kpi-lbl">📦 Despachos</div><div class="ger-kpi-sub">Prom. ${promDes}/día</div></div>
+      <div class="ger-kpi" style="border-top-color:${pctColor}"><div class="ger-kpi-val" style="color:${pctColor}">${pctCumpl}%</div><div class="ger-kpi-lbl">✅ Cumplimiento</div><div class="ger-kpi-sub">${completadas} de ${totalPed} completadas</div></div>
+      <div class="ger-kpi" style="border-top-color:#C92B2B"><div class="ger-kpi-val" style="color:#C92B2B">${pendientes}</div><div class="ger-kpi-lbl">⏳ Pendientes</div><div class="ger-kpi-sub">Sin completar</div></div>
+    </div>
+    <div style="background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;padding:18px 18px 12px;margin-bottom:16px">
+      <div style="font-weight:700;font-size:13px;color:#374151;margin-bottom:14px">📊 Ingresos vs Despachos por día — ${titulo}</div>
+      <canvas id="ger-chart"></canvas>
+    </div>
+    <div style="background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;overflow:hidden;margin-bottom:16px">
+      <table class="rep-table">
+        <thead><tr><th>Fecha</th><th style="text-align:center;color:#0891B2">📥 Ingresos</th><th style="text-align:center;color:#059669">📦 Despachos</th><th style="text-align:center">Balance</th><th style="text-align:center;color:#7B3FBB">% Cumpl.</th></tr></thead>
+        <tbody>${tableRows}</tbody>
+        <tfoot><tr style="background:#F3F4F6;font-weight:700"><td>TOTAL ${titulo}</td><td style="text-align:center;color:#0891B2">${totalIng}</td><td style="text-align:center;color:#059669">${totalDes}</td><td style="text-align:center;color:${balColor}">${balTotal>0?'+':''}${balTotal}</td><td style="text-align:center;color:${pctColor};font-weight:800">${pctCumpl}%</td></tr></tfoot>
+      </table>
+    </div>
+    <div class="factions">
+      <button class="btn-save" onclick="imprimirInformeGerencial('${titulo}')">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimir / PDF
+      </button>
+      <button class="btn-cancel" onclick="cerrar('mod-gerencial')">Cerrar</button>
+    </div>`;
+
+  document.getElementById('mod-gerencial').classList.add('open');
+
+  requestAnimationFrame(()=>{
+    const ctx=document.getElementById('ger-chart').getContext('2d');
+    if(window._gerChart) window._gerChart.destroy();
+    window._gerChart=new Chart(ctx,{
+      type:'bar',
+      data:{
+        labels:chartLabels,
+        datasets:[
+          {label:'Ingresos',data:dataIng,backgroundColor:'rgba(8,145,178,0.75)',borderColor:'#0891B2',borderWidth:1.5,borderRadius:4},
+          {label:'Despachos',data:dataDes,backgroundColor:'rgba(5,150,105,0.75)',borderColor:'#059669',borderWidth:1.5,borderRadius:4}
+        ]
+      },
+      options:{
+        responsive:true,
+        plugins:{
+          legend:{position:'top'},
+          tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.raw} pedidos`}}
+        },
+        scales:{y:{beginAtZero:true,ticks:{stepSize:1,precision:0}}}
+      }
+    });
+  });
+}
+
+function imprimirInformeGerencial(titulo){
+  const chartImg=document.getElementById('ger-chart').toDataURL('image/png');
+  const año=reporteGerDate.getFullYear(), mes=reporteGerDate.getMonth();
+  const inicio=new Date(año,mes,1,0,0,0), fin=new Date(año,mes+1,0,23,59,59);
+
+  const delMes=pedidos.filter(p=>{if(!p.fecha)return false;const d=new Date(p.fecha.replace(' ','T'));return d>=inicio&&d<=fin;});
+  const totalPed=delMes.length;
+  const completadas=delMes.filter(p=>p.estado==='Completada').length;
+  const pendientes=totalPed-completadas;
+  const pctCumpl=totalPed>0?Math.round(completadas/totalPed*100):0;
+  const pctColor=pctCumpl>=90?'#059669':pctCumpl>=70?'#D47800':'#C92B2B';
+
+  const sorted=_gerFlujo(inicio,fin);
+  const totalIng=sorted.reduce((s,[,v])=>s+v.ingresos,0);
+  const totalDes=sorted.reduce((s,[,v])=>s+v.despachos,0);
+  const balTotal=totalIng-totalDes;
+  const balColor=balTotal>0?'#C92B2B':balTotal<0?'#1E9A42':'#6B7280';
+  const dias=sorted.length||1;
+  const promIng=(totalIng/dias).toFixed(1), promDes=(totalDes/dias).toFixed(1);
+  const hoy=new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+
+  const tRows=[...sorted].reverse().map(([,v])=>{
+    const d=v.ingresos-v.despachos;
+    const c=d>0?'#C92B2B':d<0?'#1E9A42':'#6B7280';
+    const dl=d>0?'+'+d:d<0?d:'✓';
+    const pct=v.ingresos>0?Math.round(v.despachos/v.ingresos*100):0;
+    const pc=pct>=90?'#059669':pct>=70?'#D47800':'#C92B2B';
+    return `<tr><td>${v.label} <span style="color:#9CA3AF">${v.dia}</span></td><td style="text-align:center;color:#0891B2;font-weight:700">${v.ingresos}</td><td style="text-align:center;color:#059669;font-weight:700">${v.despachos}</td><td style="text-align:center;color:${c};font-weight:700">${dl}</td><td style="text-align:center;color:${pc};font-weight:800">${pct}%</td></tr>`;
+  }).join('');
+
+  const html=`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Informe Gerencial La Llave — ${titulo}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+@page{size:A4;margin:18mm 15mm 15mm;}
+body{font-family:'Segoe UI',Arial,sans-serif;color:#1F2937;font-size:11px;}
+.hdr{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:10px;border-bottom:3px solid #0D2B6E;margin-bottom:18px;}
+.co{font-size:22px;font-weight:900;color:#0D2B6E;letter-spacing:-.5px;}
+.co-sub{font-size:11px;color:#6B7280;margin-top:3px;}
+.meta{text-align:right;color:#9CA3AF;font-size:10px;line-height:1.5;}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.kpi{border:1.5px solid #E5E7EB;border-top:4px solid;border-radius:8px;padding:12px;text-align:center;}
+.kpi-v{font-size:30px;font-weight:900;line-height:1.1;}
+.kpi-l{font-size:10px;color:#6B7280;font-weight:600;margin-top:4px;}
+.kpi-s{font-size:9px;color:#9CA3AF;margin-top:2px;}
+.chart-wrap{border:1.5px solid #E5E7EB;border-radius:8px;padding:14px;margin-bottom:16px;}
+.chart-title{font-weight:700;font-size:12px;color:#374151;margin-bottom:10px;}
+.chart-img{width:100%;display:block;}
+table{width:100%;border-collapse:collapse;font-size:10px;}
+th{background:#0D2B6E;color:#fff;padding:6px 8px;text-align:left;font-size:10px;}
+td{padding:5px 8px;border-bottom:1px solid #F3F4F6;}
+tr:nth-child(even) td{background:#F9FAFB;}
+tfoot td{background:#E5E7EB!important;font-weight:700;}
+.foot{margin-top:16px;border-top:1px solid #E5E7EB;padding-top:8px;display:flex;justify-content:space-between;color:#9CA3AF;font-size:9px;}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div>
+    <div class="co">La Llave · Informe Gerencial</div>
+    <div class="co-sub">Depósito Ruta 11 · ${titulo}</div>
+  </div>
+  <div class="meta">Generado el ${hoy}<br>Plataforma de Gestión de Depósito</div>
+</div>
+<div class="kpi-grid">
+  <div class="kpi" style="border-top-color:#0891B2"><div class="kpi-v" style="color:#0891B2">${totalIng}</div><div class="kpi-l">📥 Ingresos</div><div class="kpi-s">Prom. ${promIng}/día</div></div>
+  <div class="kpi" style="border-top-color:#059669"><div class="kpi-v" style="color:#059669">${totalDes}</div><div class="kpi-l">📦 Despachos</div><div class="kpi-s">Prom. ${promDes}/día</div></div>
+  <div class="kpi" style="border-top-color:${pctColor}"><div class="kpi-v" style="color:${pctColor}">${pctCumpl}%</div><div class="kpi-l">✅ Cumplimiento</div><div class="kpi-s">${completadas} de ${totalPed}</div></div>
+  <div class="kpi" style="border-top-color:#C92B2B"><div class="kpi-v" style="color:#C92B2B">${pendientes}</div><div class="kpi-l">⏳ Pendientes</div><div class="kpi-s">Sin completar</div></div>
+</div>
+<div class="chart-wrap">
+  <div class="chart-title">📊 Ingresos vs Despachos por día — ${titulo}</div>
+  <img class="chart-img" src="${chartImg}">
+</div>
+<table>
+  <thead><tr><th>Fecha</th><th style="text-align:center;color:#93C5FD">Ingresos</th><th style="text-align:center;color:#6EE7B7">Despachos</th><th style="text-align:center">Balance</th><th style="text-align:center;color:#C4B5FD">% Cumpl.</th></tr></thead>
+  <tbody>${tRows}</tbody>
+  <tfoot><tr><td><strong>TOTAL ${titulo}</strong></td><td style="text-align:center;color:#0891B2"><strong>${totalIng}</strong></td><td style="text-align:center;color:#059669"><strong>${totalDes}</strong></td><td style="text-align:center;color:${balColor}"><strong>${balTotal>0?'+':''}${balTotal}</strong></td><td style="text-align:center;color:${pctColor}"><strong>${pctCumpl}%</strong></td></tr></tfoot>
+</table>
+<div class="foot">
+  <span>La Llave · Sistema de Gestión de Depósito · Ruta 11</span>
+  <span>Documento generado el ${hoy}</span>
+</div>
+</body>
+</html>`;
+
+  const w=window.open('','_blank','width=900,height=700');
+  w.document.write(html);
+  w.document.close();
+  w.onload=()=>{w.focus();w.print();};
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 function cerrarClickFuera(id,e)
