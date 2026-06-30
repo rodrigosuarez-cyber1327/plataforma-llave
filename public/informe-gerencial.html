@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe Gerencial · La Llave</title>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F4FA;color:#1F2937;min-height:100vh;}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#0D2B6E 0%,#1A4FA8 60%,#2563EB 100%);padding:18px 32px;display:flex;align-items:center;justify-content:space-between;}
+.hdr-brand{display:flex;align-items:center;gap:14px;}
+.hdr-icon{width:38px;height:38px;background:rgba(255,255,255,.18);border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.hdr-title{font-size:18px;font-weight:900;color:#fff;letter-spacing:-.3px;}
+.hdr-sub{font-size:11px;color:rgba(255,255,255,.7);margin-top:2px;}
+.hdr-right{display:flex;align-items:center;gap:10px;}
+.btn-back{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);color:#fff;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;transition:all .15s;}
+.btn-back:hover{background:rgba(255,255,255,.25);}
+.btn-print{display:flex;align-items:center;gap:6px;background:#fff;color:#0D2B6E;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:800;cursor:pointer;transition:opacity .15s;}
+.btn-print:hover{opacity:.9;}
+
+/* NAV MES */
+.nav-mes{background:#fff;border-bottom:1px solid #DDE3EE;padding:12px 32px;display:flex;align-items:center;gap:14px;}
+.btn-mes{background:#F0F4FA;border:1.5px solid #DDE3EE;color:#374151;border-radius:7px;padding:5px 16px;font-size:18px;cursor:pointer;font-weight:700;line-height:1.3;transition:background .15s;}
+.btn-mes:hover{background:#E5E9F2;}
+.mes-label{font-size:18px;font-weight:900;color:#0D2B6E;min-width:200px;text-align:center;}
+.nav-mes-right{margin-left:auto;font-size:11px;color:#9CA3AF;}
+
+/* MAIN */
+.main{max-width:1100px;margin:0 auto;padding:28px 24px;}
+
+/* KPI CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.kpi{background:#fff;border:1.5px solid #E5E7EB;border-top:5px solid;border-radius:12px;padding:20px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+.kpi-val{font-size:44px;font-weight:900;line-height:1.05;}
+.kpi-lbl{font-size:13px;color:#6B7280;font-weight:700;margin-top:6px;}
+.kpi-sub{font-size:11px;color:#9CA3AF;margin-top:4px;}
+
+/* CHART */
+.chart-card{background:#fff;border:1.5px solid #E5E7EB;border-radius:12px;padding:22px;margin-bottom:24px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+.card-title{font-size:13px;font-weight:800;color:#1F2937;margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+.card-title span{color:#6B7280;font-weight:500;font-size:12px;}
+
+/* TABLE */
+.table-card{background:#fff;border:1.5px solid #E5E7EB;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05);margin-bottom:24px;}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:linear-gradient(135deg,#0D2B6E,#2563EB);}
+th{color:#fff;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+td{padding:9px 14px;border-bottom:1px solid #F3F4F6;font-size:12px;}
+tbody tr:hover td{background:#F9FAFB;}
+tfoot tr td{background:#F3F4F6;font-weight:800;font-size:12px;border-top:2px solid #E5E7EB;}
+.badge-ing{display:inline-block;background:#EBF9FF;color:#0891B2;font-weight:800;border-radius:20px;padding:2px 10px;font-size:12px;}
+.badge-des{display:inline-block;background:#EDFAF2;color:#059669;font-weight:800;border-radius:20px;padding:2px 10px;font-size:12px;}
+
+/* FOOTER */
+.page-footer{text-align:center;padding:20px;color:#9CA3AF;font-size:11px;border-top:1px solid #DDE3EE;margin-top:8px;}
+
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:16px;color:#6B7280;}
+.spinner{width:40px;height:40px;border:4px solid #E5E7EB;border-top-color:#2563EB;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* PRINT */
+@media print{
+  .hdr-right,.nav-mes{display:none!important;}
+  body{background:#fff;}
+  .main{max-width:100%;padding:0;}
+  .kpi{break-inside:avoid;}
+  .chart-card,.table-card{break-inside:avoid;}
+  @page{size:A4 landscape;margin:12mm;}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-icon">
+      <svg width="20" height="20" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    </div>
+    <div>
+      <div class="hdr-title">Informe Gerencial</div>
+      <div class="hdr-sub">Depósito Ruta 11 · La Llave</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <a href="/" class="btn-back">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      Volver
+    </a>
+    <button class="btn-print" onclick="window.print()">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Imprimir / PDF
+    </button>
+  </div>
+</header>
+
+<div class="nav-mes">
+  <button class="btn-mes" onclick="cambiarMes(-1)">‹</button>
+  <span class="mes-label" id="mes-label">Cargando...</span>
+  <button class="btn-mes" onclick="cambiarMes(1)">›</button>
+  <span class="nav-mes-right" id="nav-fecha"></span>
+</div>
+
+<main class="main" id="main">
+  <div class="loading">
+    <div class="spinner"></div>
+    <span>Cargando datos...</span>
+  </div>
+</main>
+
+<div class="page-footer" id="page-footer"></div>
+
+<script>
+const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DIAS=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+let pedidos=[];
+let mesDate=new Date();
+let chart=null;
+
+function cambiarMes(d){
+  mesDate=new Date(mesDate.getFullYear(),mesDate.getMonth()+d,1);
+  renderInforme();
+}
+
+function fmtFecha(d){return new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});}
+
+function buildFlujo(inicio,fin){
+  const flujo={};
+  pedidos.forEach(p=>{
+    if(!p.fecha) return;
+    const d=new Date(p.fecha.replace(' ','T'));
+    if(d<inicio||d>fin) return;
+    const k=p.fecha.slice(0,10);
+    if(!flujo[k]) flujo[k]={label:`${k.slice(8,10)}/${k.slice(5,7)}`,dia:DIAS[d.getDay()],ingresos:0,despachos:0};
+    flujo[k].ingresos++;
+  });
+  pedidos.forEach(p=>{
+    if(!p.fechaDespacho) return;
+    const kd=p.fechaDespacho.slice(0,10);
+    const dD=new Date(kd+'T00:00:00');
+    if(dD<inicio||dD>fin) return;
+    if(!flujo[kd]) flujo[kd]={label:`${kd.slice(8,10)}/${kd.slice(5,7)}`,dia:DIAS[dD.getDay()],ingresos:0,despachos:0};
+    flujo[kd].despachos++;
+  });
+  return Object.entries(flujo).sort((a,b)=>a[0].localeCompare(b[0]));
+}
+
+function renderInforme(){
+  const año=mesDate.getFullYear(), mes=mesDate.getMonth();
+  const inicio=new Date(año,mes,1,0,0,0), fin=new Date(año,mes+1,0,23,59,59);
+  const titulo=`${MESES[mes]} ${año}`;
+
+  document.getElementById('mes-label').textContent=titulo;
+  document.getElementById('nav-fecha').textContent=`Actualizado: ${new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}`;
+
+  const delMes=pedidos.filter(p=>{
+    if(!p.fecha) return false;
+    const d=new Date(p.fecha.replace(' ','T'));
+    return d>=inicio&&d<=fin;
+  });
+
+  const totalPed=delMes.length;
+  const completadas=delMes.filter(p=>p.estado==='Completada').length;
+  const pendientes=totalPed-completadas;
+  const pctCumpl=totalPed>0?Math.round(completadas/totalPed*100):0;
+  const pctColor=pctCumpl>=90?'#059669':pctCumpl>=70?'#D47800':'#C92B2B';
+  const pctBg=pctCumpl>=90?'#EDFAF2':pctCumpl>=70?'#FFF8EC':'#FFF0F0';
+
+  const sorted=buildFlujo(inicio,fin);
+  const totalIng=sorted.reduce((s,[,v])=>s+v.ingresos,0);
+  const totalDes=sorted.reduce((s,[,v])=>s+v.despachos,0);
+  const balTotal=totalIng-totalDes;
+  const balColor=balTotal>0?'#C92B2B':balTotal<0?'#1E9A42':'#6B7280';
+  const dias=sorted.length||1;
+  const promIng=(totalIng/dias).toFixed(1);
+  const promDes=(totalDes/dias).toFixed(1);
+
+  const chartLabels=sorted.map(([,v])=>`${v.label} ${v.dia}`);
+  const dataIng=sorted.map(([,v])=>v.ingresos);
+  const dataDes=sorted.map(([,v])=>v.despachos);
+
+  const tableRows=[...sorted].reverse().map(([,v])=>{
+    const d=v.ingresos-v.despachos;
+    const c=d>0?'#C92B2B':d<0?'#1E9A42':'#6B7280';
+    const dl=d>0?`+${d} pend.`:d<0?`${Math.abs(d)} extras`:'✓';
+    const pct=v.ingresos>0?Math.round(v.despachos/v.ingresos*100):0;
+    const pc=pct>=90?'#059669':pct>=70?'#D47800':'#C92B2B';
+    return `<tr>
+      <td><strong>${v.label}</strong> <span style="color:#9CA3AF;font-size:11px">${v.dia}</span></td>
+      <td style="text-align:center"><span class="badge-ing">${v.ingresos}</span></td>
+      <td style="text-align:center"><span class="badge-des">${v.despachos}</span></td>
+      <td style="text-align:center;font-weight:700;color:${c}">${dl}</td>
+      <td style="text-align:center;font-weight:900;color:${pc};font-size:13px">${pct}%</td>
+    </tr>`;
+  }).join('')||`<tr><td colspan="5" style="text-align:center;color:#9CA3AF;padding:24px">Sin datos para ${titulo}</td></tr>`;
+
+  document.getElementById('main').innerHTML=`
+    <div class="kpi-grid">
+      <div class="kpi" style="border-top-color:#0891B2">
+        <div class="kpi-val" style="color:#0891B2">${totalIng}</div>
+        <div class="kpi-lbl">📥 Ingresos</div>
+        <div class="kpi-sub">Promedio ${promIng} órdenes/día</div>
+      </div>
+      <div class="kpi" style="border-top-color:#059669">
+        <div class="kpi-val" style="color:#059669">${totalDes}</div>
+        <div class="kpi-lbl">📦 Despachos</div>
+        <div class="kpi-sub">Promedio ${promDes} órdenes/día</div>
+      </div>
+      <div class="kpi" style="border-top-color:${pctColor};background:${pctBg}">
+        <div class="kpi-val" style="color:${pctColor}">${pctCumpl}%</div>
+        <div class="kpi-lbl">✅ Cumplimiento</div>
+        <div class="kpi-sub">${completadas} completadas de ${totalPed}</div>
+      </div>
+      <div class="kpi" style="border-top-color:#C92B2B">
+        <div class="kpi-val" style="color:#C92B2B">${pendientes}</div>
+        <div class="kpi-lbl">⏳ Pendientes</div>
+        <div class="kpi-sub">Órdenes sin completar</div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-title">
+        📊 Ingresos vs Despachos por día
+        <span>— ${titulo}</span>
+      </div>
+      <canvas id="ger-chart" height="90"></canvas>
+    </div>
+
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th style="text-align:center">📥 Ingresos</th>
+            <th style="text-align:center">📦 Despachos</th>
+            <th style="text-align:center">Balance</th>
+            <th style="text-align:center;color:#C4B5FD">% Cumpl.</th>
+          </tr>
+        </thead>
+        <tbody>${tableRows}</tbody>
+        <tfoot>
+          <tr>
+            <td>TOTAL — ${titulo}</td>
+            <td style="text-align:center;color:#0891B2">${totalIng}</td>
+            <td style="text-align:center;color:#059669">${totalDes}</td>
+            <td style="text-align:center;color:${balColor}">${balTotal>0?'+':''}${balTotal}</td>
+            <td style="text-align:center;color:${pctColor}">${pctCumpl}%</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
+
+  document.getElementById('page-footer').textContent=`La Llave · Sistema de Gestión de Depósito · Ruta 11 · Informe ${titulo}`;
+
+  requestAnimationFrame(()=>{
+    const ctx=document.getElementById('ger-chart').getContext('2d');
+    if(chart) chart.destroy();
+    chart=new Chart(ctx,{
+      type:'bar',
+      data:{
+        labels:chartLabels,
+        datasets:[
+          {label:'Ingresos',data:dataIng,backgroundColor:'rgba(8,145,178,0.75)',borderColor:'#0891B2',borderWidth:1.5,borderRadius:5},
+          {label:'Despachos',data:dataDes,backgroundColor:'rgba(5,150,105,0.75)',borderColor:'#059669',borderWidth:1.5,borderRadius:5}
+        ]
+      },
+      options:{
+        responsive:true,
+        plugins:{
+          legend:{position:'top',labels:{font:{size:13,weight:'bold'},padding:20}},
+          tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.raw} pedidos`}}
+        },
+        scales:{
+          y:{beginAtZero:true,ticks:{stepSize:1,precision:0},grid:{color:'#F3F4F6'}},
+          x:{grid:{display:false}}
+        }
+      }
+    });
+  });
+}
+
+async function init(){
+  try{
+    const res=await axios.get('/api/pedidos');
+    pedidos=res.data;
+    renderInforme();
+  } catch(e){
+    document.getElementById('main').innerHTML=`<div class="loading"><span style="color:#C92B2B">Error al cargar datos</span></div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
