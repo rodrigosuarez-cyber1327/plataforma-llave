@@ -101,6 +101,17 @@ app.put('/api/pedidos/:id', async (req, res) => {
     }
 });
 
+// Delete an order
+app.delete('/api/pedidos/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await db.query('DELETE FROM pedidos WHERE id = $1', [id]);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Batch insert/update (Protected, used by sync.js)
 app.post('/api/pedidos/batch', checkSecret, async (req, res) => {
     try {

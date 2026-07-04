@@ -161,6 +161,7 @@ function renderTable(){
       <td class="hora-cell">${p.inicioC||'—'}</td>
       <td class="hora-cell">${p.finC||'—'}</td>
       <td><span class="${tip}">${p.tipo||'Normal'}</span></td>
+      <td onclick="event.stopPropagation()"><button class="btn-del" onclick="eliminarOrden(${p.id},${p.n})" title="Eliminar orden">🗑</button></td>
     </tr>`;
   }).join('');
 }
@@ -304,6 +305,16 @@ async function guardarNuevo(){
     btn.disabled = false;
     btn.innerHTML = `<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg> Guardar orden`;
   }
+}
+
+async function eliminarOrden(id, n){
+  if(!confirm(`¿Eliminar la orden N° ${n}? Esta acción no se puede deshacer.`)) return;
+  try{
+    await axios.delete(`/api/pedidos/${id}`);
+    pedidos = pedidos.filter(p => p.id !== id);
+    renderTable();
+    toast(`Orden N° ${n} eliminada`);
+  } catch(e){ alert('Error al eliminar la orden'); }
 }
 
 function cerrar(id){document.getElementById(id).classList.remove('open');}
