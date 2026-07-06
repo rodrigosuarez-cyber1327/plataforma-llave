@@ -259,7 +259,6 @@ tbody tr:hover td{background:#F9FAFB;}
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
 const SUCURSALES = [
   { nombre:'Sucursal Illia',          cls:'illia', dot:'#1A4FA8' },
@@ -434,13 +433,14 @@ function toast(msg){
 }
 
 async function init(){
+  renderMetrics();
   try{
     const res = await axios.get('/api/abastecimiento');
     repartos = res.data;
     renderMetrics();
     renderTabla();
   } catch(e){
-    document.getElementById('tbody').innerHTML=`<tr><td colspan="9" class="empty" style="color:#C92B2B">Error al cargar datos</td></tr>`;
+    document.getElementById('tbody').innerHTML=`<tr><td colspan="9" class="empty" style="color:#C92B2B">Error: ${e?.response?.status||''} ${e?.message||'no se pudo conectar'}</td></tr>`;
   }
 }
 
