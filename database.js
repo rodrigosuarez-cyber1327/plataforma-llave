@@ -54,6 +54,21 @@ async function setupDatabase() {
         )
     `);
 
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS abastecimiento (
+            id SERIAL PRIMARY KEY,
+            fecha TEXT,
+            hora_inicio TEXT,
+            hora_fin TEXT,
+            sucursal TEXT,
+            bultos INTEGER,
+            estado TEXT,
+            responsable TEXT,
+            obs TEXT,
+            created_at TEXT
+        )
+    `);
+
     return pool;
 }
 

@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abastecimiento a Sucursales · La Llave</title>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F4FA;color:#1F2937;min-height:100vh;}
+
+/* SUCURSALES */
+:root{
+  --illia:#1A4FA8;       --illia-bg:#EBF1FF;    --illia-border:#90B8F0;
+  --junin:#059669;       --junin-bg:#EDFAF2;    --junin-border:#80D8A8;
+  --lopez:#B04800;       --lopez-bg:#FFF0E0;    --lopez-border:#F0C090;
+  --fama-r:#C92B2B;      --fama-r-bg:#FFF0F0;   --fama-r-border:#F5C0C0;
+  --fama-c:#7B3FBB;      --fama-c-bg:#F5EEFF;   --fama-c-border:#C9A0F0;
+  --lenar:#0891B2;       --lenar-bg:#E0F7FF;    --lenar-border:#7DD3E8;
+}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#0D2B6E 0%,#1A4FA8 60%,#2563EB 100%);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;}
+.hdr-brand{display:flex;align-items:center;gap:12px;}
+.hdr-icon{width:36px;height:36px;background:rgba(255,255,255,.18);border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.hdr-title{font-size:17px;font-weight:900;color:#fff;}
+.hdr-sub{font-size:11px;color:rgba(255,255,255,.7);margin-top:2px;}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.btn-nav{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);color:#fff;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;transition:all .15s;}
+.btn-nav:hover{background:rgba(255,255,255,.25);}
+.btn-new{display:flex;align-items:center;gap:6px;background:#fff;color:#0D2B6E;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:800;cursor:pointer;transition:opacity .15s;}
+.btn-new:hover{opacity:.9;}
+
+/* METRICS */
+.main{max-width:1200px;margin:0 auto;padding:24px 20px;}
+.suc-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px;}
+.suc-card{border-radius:12px;border:2px solid;padding:14px 12px;text-align:center;cursor:pointer;transition:transform .15s,box-shadow .15s;}
+.suc-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.12);}
+.suc-card.activa{box-shadow:0 0 0 3px currentColor;}
+.suc-name{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+.suc-count{font-size:28px;font-weight:900;line-height:1;}
+.suc-sub{font-size:10px;margin-top:4px;opacity:.75;}
+
+.suc-illia   {background:var(--illia-bg);  border-color:var(--illia-border);  color:var(--illia);}
+.suc-junin   {background:var(--junin-bg);  border-color:var(--junin-border);  color:var(--junin);}
+.suc-lopez   {background:var(--lopez-bg);  border-color:var(--lopez-border);  color:var(--lopez);}
+.suc-famar   {background:var(--fama-r-bg); border-color:var(--fama-r-border); color:var(--fama-r);}
+.suc-famac   {background:var(--fama-c-bg); border-color:var(--fama-c-border); color:var(--fama-c);}
+.suc-lenar   {background:var(--lenar-bg);  border-color:var(--lenar-border);  color:var(--lenar);}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.si{border:1.5px solid #DDE3EE;border-radius:8px;padding:8px 12px;font-size:13px;background:#fff;flex:1;min-width:200px;}
+.fsel{border:1.5px solid #DDE3EE;border-radius:8px;padding:8px 10px;font-size:12px;background:#fff;color:#374151;cursor:pointer;}
+.fecha-filter{border:1.5px solid #DDE3EE;border-radius:8px;padding:7px 10px;font-size:12px;background:#fff;color:#374151;}
+
+/* TABLE */
+.tcard{background:#fff;border:1.5px solid #DDE3EE;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+.tscroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead tr{background:linear-gradient(135deg,#0D2B6E,#2563EB);}
+th{color:#fff;padding:10px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;}
+td{padding:9px 12px;border-bottom:1px solid #F3F4F6;vertical-align:middle;}
+tbody tr:hover td{background:#F9FAFB;}
+
+/* BADGE SUCURSAL */
+.suc-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;border:1px solid;white-space:nowrap;}
+.suc-badge.illia  {background:var(--illia-bg); color:var(--illia); border-color:var(--illia-border);}
+.suc-badge.junin  {background:var(--junin-bg); color:var(--junin); border-color:var(--junin-border);}
+.suc-badge.lopez  {background:var(--lopez-bg); color:var(--lopez); border-color:var(--lopez-border);}
+.suc-badge.famar  {background:var(--fama-r-bg);color:var(--fama-r);border-color:var(--fama-r-border);}
+.suc-badge.famac  {background:var(--fama-c-bg);color:var(--fama-c);border-color:var(--fama-c-border);}
+.suc-badge.lenar  {background:var(--lenar-bg); color:var(--lenar); border-color:var(--lenar-border);}
+
+/* ESTADO BADGE */
+.est-pend{background:#FFF8EC;color:#D47800;border:1px solid #FAD890;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}
+.est-rep {background:#EBF1FF;color:#1A4FA8;border:1px solid #90B8F0;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}
+.est-ent {background:#EDFAF2;color:#059669;border:1px solid #80D8A8;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}
+
+/* BULTOS */
+.bultos-num{font-size:15px;font-weight:900;color:#1A2233;}
+
+/* ACTION BTNS */
+.btn-edit{background:none;border:none;color:#6B7280;cursor:pointer;padding:4px 6px;border-radius:4px;font-size:14px;transition:color .15s;}
+.btn-edit:hover{color:#1A4FA8;background:#EBF1FF;}
+.btn-del{background:none;border:none;color:#C0C8DC;cursor:pointer;padding:4px 6px;border-radius:4px;font-size:14px;transition:color .15s;}
+.btn-del:hover{color:#C92B2B;background:#FFF0F0;}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(10,20,50,.45);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:999;opacity:0;pointer-events:none;transition:opacity .2s;}
+.overlay.open{opacity:1;pointer-events:all;}
+.mbox{background:#fff;border-radius:14px;width:100%;max-width:580px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;}
+.mhdr{background:linear-gradient(135deg,#0D2B6E,#2563EB);padding:20px 24px;display:flex;align-items:flex-start;justify-content:space-between;}
+.mtitle{font-size:16px;font-weight:800;color:#fff;}
+.msub{font-size:12px;color:rgba(255,255,255,.7);margin-top:3px;}
+.xbtn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;}
+.mbody{padding:22px 24px;}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg.full{grid-column:1/-1;}
+.flbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6B7280;}
+.finp{border:1.5px solid #DDE3EE;border-radius:8px;padding:9px 12px;font-size:13px;color:#1F2937;transition:border-color .15s;}
+.finp:focus{outline:none;border-color:#2563EB;}
+.fsel2{border:1.5px solid #DDE3EE;border-radius:8px;padding:9px 10px;font-size:13px;color:#1F2937;background:#fff;width:100%;}
+.ftxt{border:1.5px solid #DDE3EE;border-radius:8px;padding:9px 12px;font-size:13px;color:#1F2937;resize:vertical;min-height:70px;width:100%;}
+.factions{display:flex;gap:10px;margin-top:18px;}
+.btn-save{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#1A4FA8,#2563EB);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-save:hover{opacity:.9;}
+.btn-cancel{background:#F3F4F6;color:#6B7280;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-cancel:hover{background:#E5E7EB;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:#1E9A42;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2);animation:slideIn .25s ease;}
+@keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+.empty{text-align:center;padding:40px;color:#9CA3AF;font-size:13px;}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-icon">
+      <svg width="20" height="20" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+    </div>
+    <div>
+      <div class="hdr-title">Abastecimiento a Sucursales</div>
+      <div class="hdr-sub">Pedidos diarios y repartos · La Llave</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <a href="/" class="btn-nav">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      Órdenes
+    </a>
+    <button class="btn-new" onclick="abrirNuevo()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nuevo reparto
+    </button>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- CARDS POR SUCURSAL -->
+  <div class="suc-grid" id="suc-grid"></div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <input class="si" id="buscar" type="text" placeholder="Buscar sucursal, responsable..." oninput="renderTabla()">
+    <input class="fecha-filter" id="f-fecha" type="date" onchange="renderTabla()">
+    <select class="fsel" id="f-suc" onchange="renderTabla()">
+      <option value="">Todas las sucursales</option>
+      <option>Sucursal Illia</option>
+      <option>Sucursal Junín</option>
+      <option>Sucursal López y Planes</option>
+      <option>Fama Resistencia</option>
+      <option>Fama Corrientes</option>
+      <option>Lenar Güemes</option>
+    </select>
+    <select class="fsel" id="f-estado" onchange="renderTabla()">
+      <option value="">Todos los estados</option>
+      <option>Pendiente</option>
+      <option>En reparto</option>
+      <option>Entregado</option>
+    </select>
+    <button class="btn-cancel" onclick="limpiarFiltros()">Limpiar filtros</button>
+  </div>
+
+  <!-- TABLA -->
+  <div class="tcard">
+    <div class="tscroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Sucursal</th>
+            <th>Fecha</th>
+            <th>Hora inicio</th>
+            <th>Hora fin</th>
+            <th style="text-align:center">Bultos</th>
+            <th>Responsable</th>
+            <th>Estado</th>
+            <th>Observaciones</th>
+            <th style="width:80px"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<!-- MODAL -->
+<div class="overlay" id="mod-nuevo" onclick="cerrarOv('mod-nuevo',event)">
+  <div class="mbox">
+    <div class="mhdr">
+      <div>
+        <div class="mtitle" id="mod-titulo">Nuevo reparto</div>
+        <div class="msub">Completá los datos del reparto</div>
+      </div>
+      <button class="xbtn" onclick="cerrar('mod-nuevo')">×</button>
+    </div>
+    <div class="mbody">
+      <div class="fgrid">
+        <div class="fg full">
+          <label class="flbl">Sucursal *</label>
+          <select class="fsel2" id="e-suc">
+            <option value="">Seleccionar sucursal</option>
+            <option>Sucursal Illia</option>
+            <option>Sucursal Junín</option>
+            <option>Sucursal López y Planes</option>
+            <option>Fama Resistencia</option>
+            <option>Fama Corrientes</option>
+            <option>Lenar Güemes</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="flbl">Fecha *</label>
+          <input class="finp" id="e-fecha" type="date">
+        </div>
+        <div class="fg">
+          <label class="flbl">Responsable</label>
+          <input class="finp" id="e-resp" type="text" placeholder="Nombre del repartidor">
+        </div>
+        <div class="fg">
+          <label class="flbl">Hora inicio</label>
+          <input class="finp" id="e-inicio" type="time">
+        </div>
+        <div class="fg">
+          <label class="flbl">Hora fin</label>
+          <input class="finp" id="e-fin" type="time">
+        </div>
+        <div class="fg">
+          <label class="flbl">Cantidad de bultos *</label>
+          <input class="finp" id="e-bultos" type="number" placeholder="0" min="0">
+        </div>
+        <div class="fg">
+          <label class="flbl">Estado</label>
+          <select class="fsel2" id="e-estado">
+            <option>Pendiente</option>
+            <option>En reparto</option>
+            <option>Entregado</option>
+          </select>
+        </div>
+        <div class="fg full">
+          <label class="flbl">Observaciones</label>
+          <textarea class="ftxt" id="e-obs" placeholder="Notas adicionales..."></textarea>
+        </div>
+      </div>
+      <div class="factions">
+        <button class="btn-save" onclick="guardar()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+          Guardar
+        </button>
+        <button class="btn-cancel" onclick="cerrar('mod-nuevo')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+const SUCURSALES = [
+  { nombre:'Sucursal Illia',          cls:'illia', dot:'#1A4FA8' },
+  { nombre:'Sucursal Junín',          cls:'junin', dot:'#059669' },
+  { nombre:'Sucursal López y Planes', cls:'lopez', dot:'#B04800' },
+  { nombre:'Fama Resistencia',        cls:'famar', dot:'#C92B2B' },
+  { nombre:'Fama Corrientes',         cls:'famac', dot:'#7B3FBB' },
+  { nombre:'Lenar Güemes',            cls:'lenar', dot:'#0891B2' },
+];
+
+function sucCls(s){
+  const m = {'Sucursal Illia':'illia','Sucursal Junín':'junin','Sucursal López y Planes':'lopez','Fama Resistencia':'famar','Fama Corrientes':'famac','Lenar Güemes':'lenar'};
+  return m[s]||'lenar';
+}
+
+function estCls(e){
+  if(e==='Pendiente') return 'est-pend';
+  if(e==='En reparto') return 'est-rep';
+  return 'est-ent';
+}
+
+function fmtFecha(f){
+  if(!f) return '—';
+  const [y,m,d] = f.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+let repartos = [];
+let editId   = null;
+let filtroSuc = '';
+
+function renderMetrics(){
+  const hoy = new Date().toISOString().slice(0,10);
+  document.getElementById('suc-grid').innerHTML = SUCURSALES.map(s => {
+    const total = repartos.filter(r => r.sucursal === s.nombre).length;
+    const hoyN  = repartos.filter(r => r.sucursal === s.nombre && r.fecha === hoy).length;
+    const bultos= repartos.filter(r => r.sucursal === s.nombre && r.fecha === hoy).reduce((a,r)=>a+(r.bultos||0),0);
+    return `<div class="suc-card suc-${s.cls}" onclick="filtrarSuc('${s.nombre.replace(/'/g,"\\'")}')">
+      <div class="suc-name">${s.nombre}</div>
+      <div class="suc-count">${hoyN}</div>
+      <div class="suc-sub">${bultos} bultos hoy · ${total} total</div>
+    </div>`;
+  }).join('');
+}
+
+function filtrarSuc(nombre){
+  filtroSuc = filtroSuc === nombre ? '' : nombre;
+  document.getElementById('f-suc').value = filtroSuc;
+  renderTabla();
+}
+
+function limpiarFiltros(){
+  document.getElementById('buscar').value='';
+  document.getElementById('f-fecha').value='';
+  document.getElementById('f-suc').value='';
+  document.getElementById('f-estado').value='';
+  filtroSuc='';
+  renderTabla();
+}
+
+function renderTabla(){
+  const q    = document.getElementById('buscar').value.toLowerCase();
+  const fecha= document.getElementById('f-fecha').value;
+  const suc  = document.getElementById('f-suc').value;
+  const est  = document.getElementById('f-estado').value;
+
+  const fil = repartos.filter(r =>
+    (!q    || (r.sucursal||'').toLowerCase().includes(q) || (r.responsable||'').toLowerCase().includes(q) || (r.obs||'').toLowerCase().includes(q)) &&
+    (!fecha|| r.fecha === fecha) &&
+    (!suc  || r.sucursal === suc) &&
+    (!est  || r.estado === est)
+  );
+
+  if(!fil.length){
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="9" class="empty">Sin registros</td></tr>`;
+    return;
+  }
+
+  document.getElementById('tbody').innerHTML = fil.map(r => `
+    <tr>
+      <td><span class="suc-badge ${sucCls(r.sucursal)}"><span>●</span>${r.sucursal}</span></td>
+      <td style="font-weight:700">${fmtFecha(r.fecha)}</td>
+      <td>${r.hora_inicio||'—'}</td>
+      <td>${r.hora_fin||'—'}</td>
+      <td style="text-align:center"><span class="bultos-num">${r.bultos||'—'}</span></td>
+      <td style="color:#374151">${r.responsable||'—'}</td>
+      <td><span class="${estCls(r.estado)}">${r.estado||'Pendiente'}</span></td>
+      <td style="color:#6B7280;font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.obs||'—'}</td>
+      <td>
+        <button class="btn-edit" onclick="abrirEditar(${r.id})" title="Editar">✏️</button>
+        <button class="btn-del"  onclick="eliminar(${r.id})"    title="Eliminar">🗑</button>
+      </td>
+    </tr>`).join('');
+}
+
+function abrirNuevo(){
+  editId = null;
+  document.getElementById('mod-titulo').textContent = 'Nuevo reparto';
+  document.getElementById('e-suc').value    = '';
+  document.getElementById('e-fecha').value  = new Date().toISOString().slice(0,10);
+  document.getElementById('e-resp').value   = '';
+  document.getElementById('e-inicio').value = '';
+  document.getElementById('e-fin').value    = '';
+  document.getElementById('e-bultos').value = '';
+  document.getElementById('e-estado').value = 'Pendiente';
+  document.getElementById('e-obs').value    = '';
+  document.getElementById('mod-nuevo').classList.add('open');
+}
+
+function abrirEditar(id){
+  const r = repartos.find(x=>x.id===id); if(!r) return;
+  editId = id;
+  document.getElementById('mod-titulo').textContent = 'Editar reparto';
+  document.getElementById('e-suc').value    = r.sucursal||'';
+  document.getElementById('e-fecha').value  = r.fecha||'';
+  document.getElementById('e-resp').value   = r.responsable||'';
+  document.getElementById('e-inicio').value = r.hora_inicio||'';
+  document.getElementById('e-fin').value    = r.hora_fin||'';
+  document.getElementById('e-bultos').value = r.bultos||'';
+  document.getElementById('e-estado').value = r.estado||'Pendiente';
+  document.getElementById('e-obs').value    = r.obs||'';
+  document.getElementById('mod-nuevo').classList.add('open');
+}
+
+async function guardar(){
+  const suc = document.getElementById('e-suc').value;
+  const fecha = document.getElementById('e-fecha').value;
+  if(!suc||!fecha){ alert('Sucursal y fecha son obligatorios'); return; }
+  const body = {
+    sucursal:    suc,
+    fecha:       fecha,
+    hora_inicio: document.getElementById('e-inicio').value,
+    hora_fin:    document.getElementById('e-fin').value,
+    bultos:      parseInt(document.getElementById('e-bultos').value)||0,
+    estado:      document.getElementById('e-estado').value,
+    responsable: document.getElementById('e-resp').value,
+    obs:         document.getElementById('e-obs').value,
+  };
+  try{
+    if(editId){
+      await axios.put(`/api/abastecimiento/${editId}`, body);
+      const i = repartos.findIndex(x=>x.id===editId);
+      repartos[i] = {...repartos[i],...body};
+      toast('Reparto actualizado');
+    } else {
+      const res = await axios.post('/api/abastecimiento', body);
+      repartos.unshift({id:res.data.id,...body});
+      toast('Reparto registrado');
+    }
+    cerrar('mod-nuevo');
+    renderMetrics();
+    renderTabla();
+  } catch(e){ alert('Error al guardar'); }
+}
+
+async function eliminar(id){
+  if(!confirm('¿Eliminar este reparto?')) return;
+  try{
+    await axios.delete(`/api/abastecimiento/${id}`);
+    repartos = repartos.filter(r=>r.id!==id);
+    renderMetrics(); renderTabla();
+    toast('Reparto eliminado');
+  } catch(e){ alert('Error al eliminar'); }
+}
+
+function cerrar(id){ document.getElementById(id).classList.remove('open'); }
+function cerrarOv(id,e){ if(e.target===document.getElementById(id)) cerrar(id); }
+
+function toast(msg){
+  const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(),2500);
+}
+
+async function init(){
+  try{
+    const res = await axios.get('/api/abastecimiento');
+    repartos = res.data;
+    renderMetrics();
+    renderTabla();
+  } catch(e){
+    document.getElementById('tbody').innerHTML=`<tr><td colspan="9" class="empty" style="color:#C92B2B">Error al cargar datos</td></tr>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>

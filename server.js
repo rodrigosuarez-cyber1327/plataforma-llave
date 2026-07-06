@@ -151,6 +151,47 @@ app.post('/api/pedidos/batch', checkSecret, async (req, res) => {
     }
 });
 
+// ── ABASTECIMIENTO A SUCURSALES ───────────────────────────────────────────────
+
+app.get('/api/abastecimiento', async (req, res) => {
+    try {
+        const { rows } = await db.query('SELECT * FROM abastecimiento ORDER BY id DESC');
+        res.json(rows);
+    } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.post('/api/abastecimiento', async (req, res) => {
+    try {
+        const { fecha, hora_inicio, hora_fin, sucursal, bultos, estado, responsable, obs } = req.body;
+        const created_at = new Date().toISOString().slice(0,16).replace('T',' ');
+        const result = await db.query(
+            `INSERT INTO abastecimiento (fecha, hora_inicio, hora_fin, sucursal, bultos, estado, responsable, obs, created_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+            [fecha, hora_inicio, hora_fin, sucursal, bultos, estado||'Pendiente', responsable, obs, created_at]
+        );
+        res.status(201).json({ id: result.rows[0].id, ...req.body });
+    } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.put('/api/abastecimiento/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { fecha, hora_inicio, hora_fin, sucursal, bultos, estado, responsable, obs } = req.body;
+        await db.query(
+            `UPDATE abastecimiento SET fecha=$1, hora_inicio=$2, hora_fin=$3, sucursal=$4, bultos=$5, estado=$6, responsable=$7, obs=$8 WHERE id=$9`,
+            [fecha, hora_inicio, hora_fin, sucursal, bultos, estado, responsable, obs, id]
+        );
+        res.json({ success: true });
+    } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.delete('/api/abastecimiento/:id', async (req, res) => {
+    try {
+        await db.query('DELETE FROM abastecimiento WHERE id = $1', [req.params.id]);
+        res.json({ success: true });
+    } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
 // ── CONTEOS DE STOCK ──────────────────────────────────────────────────────────
 
 app.get('/api/conteos', async (req, res) => {
