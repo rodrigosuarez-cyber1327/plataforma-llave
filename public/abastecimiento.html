@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Abastecimiento a Sucursales · La Llave</title>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F4FA;color:#1F2937;min-height:100vh;}
@@ -114,6 +115,31 @@ tbody tr:hover td{background:#F9FAFB;}
 @keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
 
 .empty{text-align:center;padding:40px;color:#9CA3AF;font-size:13px;}
+
+/* BOTONES HEADER EXTRA */
+.btn-ger{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#312E81,#5B21B6);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .15s;}
+.btn-ger:hover{opacity:.88;}
+.btn-xl{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);color:#fff;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
+.btn-xl:hover{background:rgba(255,255,255,.25);}
+
+/* MODAL GERENCIAL */
+.rep-hdr-abas{background:linear-gradient(135deg,#0D2B6E,#2563EB);padding:20px 24px;display:flex;align-items:flex-start;justify-content:space-between;}
+.ger-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.ger-kpi{border:1.5px solid #DDE3EE;border-radius:10px;padding:14px;text-align:center;background:#F8FAFF;}
+.ger-kpi-val{font-size:30px;font-weight:900;color:#1A4FA8;line-height:1;}
+.ger-kpi-lbl{font-size:10px;color:#6B7280;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-top:4px;}
+.ger-kpi-sub{font-size:11px;color:#9CA3AF;margin-top:2px;}
+.ger-sec-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#0D2B6E;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #DDE3EE;}
+.ger-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:18px;}
+.ger-table th{background:#0D2B6E;color:#fff;padding:7px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;}
+.ger-table td{padding:7px 10px;border-bottom:1px solid #F3F4F6;}
+.ger-table tr:last-child td{border-bottom:none;}
+.ger-table tr:nth-child(even) td{background:#F9FAFB;}
+.pct-bar-wrap{display:flex;align-items:center;gap:6px;}
+.pct-bar{flex:1;background:#E5E7EB;border-radius:4px;height:8px;overflow:hidden;}
+.pct-bar-fill{height:100%;border-radius:4px;background:#059669;}
+.btn-print-abas{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#0D2B6E,#2563EB);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-print-abas:hover{opacity:.9;}
 </style>
 </head>
 <body>
@@ -133,6 +159,14 @@ tbody tr:hover td{background:#F9FAFB;}
       <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
       Órdenes
     </a>
+    <button class="btn-ger" onclick="abrirGerencial()">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Inf. Gerencial
+    </button>
+    <button class="btn-xl" onclick="exportarExcel()">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportar Excel
+    </button>
     <button class="btn-new" onclick="abrirNuevo()">
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Nuevo reparto
@@ -256,6 +290,20 @@ tbody tr:hover td{background:#F9FAFB;}
         <button class="btn-cancel" onclick="cerrar('mod-nuevo')">Cancelar</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- MODAL INFORME GERENCIAL -->
+<div class="overlay" id="mod-gerencial" onclick="cerrarOv('mod-gerencial',event)">
+  <div class="mbox" style="max-width:820px">
+    <div class="rep-hdr-abas">
+      <div>
+        <div class="mtitle">Informe Gerencial · Abastecimiento</div>
+        <div class="msub" id="ger-sub">La Llave · Depósito Ruta 11</div>
+      </div>
+      <button class="xbtn" onclick="cerrar('mod-gerencial')">×</button>
+    </div>
+    <div class="mbody" id="ger-body" style="max-height:80vh;overflow-y:auto"></div>
   </div>
 </div>
 
@@ -430,6 +478,175 @@ function cerrarOv(id,e){ if(e.target===document.getElementById(id)) cerrar(id); 
 function toast(msg){
   const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
   document.body.appendChild(t); setTimeout(()=>t.remove(),2500);
+}
+
+// ── INFORME GERENCIAL ─────────────────────────────────────────────────────────
+
+function abrirGerencial(){
+  const hoy = new Date().toISOString().slice(0,10);
+  const hoyStr = new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+
+  const totalRep   = repartos.length;
+  const totalBult  = repartos.reduce((s,r)=>s+(r.bultos||0),0);
+  const entregados = repartos.filter(r=>r.estado==='Entregado').length;
+  const pctCumpl   = totalRep>0 ? Math.round(entregados/totalRep*100) : 0;
+  const hoyRep     = repartos.filter(r=>r.fecha===hoy).length;
+  const hoyBult    = repartos.filter(r=>r.fecha===hoy).reduce((s,r)=>s+(r.bultos||0),0);
+
+  // Por sucursal
+  const sucRows = SUCURSALES.map(s => {
+    const rep  = repartos.filter(r=>r.sucursal===s.nombre);
+    const ent  = rep.filter(r=>r.estado==='Entregado').length;
+    const bult = rep.reduce((a,r)=>a+(r.bultos||0),0);
+    const pct  = rep.length>0 ? Math.round(ent/rep.length*100) : 0;
+    const col  = pct>=90?'#059669':pct>=70?'#D47800':'#C92B2B';
+    return `<tr>
+      <td><span class="suc-badge ${s.cls}"><span>●</span>${s.nombre}</span></td>
+      <td style="text-align:center;font-weight:700">${rep.length}</td>
+      <td style="text-align:center;font-weight:700">${bult}</td>
+      <td style="text-align:center">${ent}</td>
+      <td>
+        <div class="pct-bar-wrap">
+          <div class="pct-bar"><div class="pct-bar-fill" style="width:${pct}%;background:${col}"></div></div>
+          <span style="font-size:11px;font-weight:700;color:${col};min-width:34px">${pct}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Por estado
+  const estados = ['Pendiente','En reparto','Entregado'];
+  const estRows = estados.map(e=>{
+    const n = repartos.filter(r=>r.estado===e).length;
+    const b = repartos.filter(r=>r.estado===e).reduce((s,r)=>s+(r.bultos||0),0);
+    const cls = e==='Pendiente'?'est-pend':e==='En reparto'?'est-rep':'est-ent';
+    return `<tr>
+      <td><span class="${cls}">${e}</span></td>
+      <td style="text-align:center;font-weight:700">${n}</td>
+      <td style="text-align:center;font-weight:700">${b}</td>
+      <td style="text-align:center">${totalRep>0?Math.round(n/totalRep*100):0}%</td>
+    </tr>`;
+  }).join('');
+
+  // Últimos 7 días
+  const diasMap = {};
+  repartos.forEach(r=>{
+    const d = r.fecha||'';
+    if(!diasMap[d]) diasMap[d]={repartos:0,bultos:0,entregados:0};
+    diasMap[d].repartos++; diasMap[d].bultos+=(r.bultos||0);
+    if(r.estado==='Entregado') diasMap[d].entregados++;
+  });
+  const diasRows = Object.entries(diasMap).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,7).map(([d,v])=>{
+    const [y,m,dd]=d.split('-');
+    const pct=v.repartos>0?Math.round(v.entregados/v.repartos*100):0;
+    const col=pct>=90?'#059669':pct>=70?'#D47800':'#C92B2B';
+    return `<tr>
+      <td style="font-weight:700">${dd}/${m}/${y}</td>
+      <td style="text-align:center">${v.repartos}</td>
+      <td style="text-align:center;font-weight:700">${v.bultos}</td>
+      <td style="text-align:center">${v.entregados}</td>
+      <td style="text-align:center;font-weight:700;color:${col}">${pct}%</td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="5" style="text-align:center;color:#9CA3AF;padding:12px">Sin datos</td></tr>';
+
+  const pctColor = pctCumpl>=90?'#059669':pctCumpl>=70?'#D47800':'#C92B2B';
+
+  document.getElementById('ger-sub').textContent = `La Llave · Depósito Ruta 11 · ${hoyStr}`;
+  document.getElementById('ger-body').innerHTML = `
+    <div class="ger-kpi-grid">
+      <div class="ger-kpi"><div class="ger-kpi-val">${totalRep}</div><div class="ger-kpi-lbl">Total repartos</div><div class="ger-kpi-sub">${hoyRep} hoy</div></div>
+      <div class="ger-kpi"><div class="ger-kpi-val">${totalBult}</div><div class="ger-kpi-lbl">Bultos despachados</div><div class="ger-kpi-sub">${hoyBult} hoy</div></div>
+      <div class="ger-kpi"><div class="ger-kpi-val" style="color:#059669">${entregados}</div><div class="ger-kpi-lbl">Entregados</div><div class="ger-kpi-sub">de ${totalRep} repartos</div></div>
+      <div class="ger-kpi"><div class="ger-kpi-val" style="color:${pctColor}">${pctCumpl}%</div><div class="ger-kpi-lbl">% Cumplimiento</div><div class="ger-kpi-sub">${pctColor==='#059669'?'Excelente':pctColor==='#D47800'?'Regular':'Bajo'}</div></div>
+    </div>
+    <div class="ger-sec-title">Repartos por sucursal</div>
+    <table class="ger-table">
+      <thead><tr><th>Sucursal</th><th style="text-align:center">Repartos</th><th style="text-align:center">Bultos</th><th style="text-align:center">Entregados</th><th style="text-align:center">% Cumplimiento</th></tr></thead>
+      <tbody>${sucRows}</tbody>
+    </table>
+    <div class="ger-sec-title">Distribución por estado</div>
+    <table class="ger-table">
+      <thead><tr><th>Estado</th><th style="text-align:center">Cantidad</th><th style="text-align:center">Bultos</th><th style="text-align:center">% del total</th></tr></thead>
+      <tbody>${estRows}</tbody>
+    </table>
+    <div class="ger-sec-title">Últimos 7 días</div>
+    <table class="ger-table">
+      <thead><tr><th>Fecha</th><th style="text-align:center">Repartos</th><th style="text-align:center">Bultos</th><th style="text-align:center">Entregados</th><th style="text-align:center">% Cumpl.</th></tr></thead>
+      <tbody>${diasRows}</tbody>
+    </table>
+    <div class="factions">
+      <button class="btn-print-abas" onclick="imprimirGerencial()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimir / PDF
+      </button>
+      <button class="btn-cancel" onclick="cerrar('mod-gerencial')">Cerrar</button>
+    </div>`;
+  document.getElementById('mod-gerencial').classList.add('open');
+}
+
+function imprimirGerencial(){
+  const hoyStr = new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+  const body   = document.getElementById('ger-body').innerHTML
+    .replace(/<div class="factions"[\s\S]*?<\/div>\s*<\/div>/, '');
+  const w = window.open('','_blank','width=900,height=700');
+  w.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>Informe Gerencial Abastecimiento · La Llave</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+@page{size:A4;margin:18mm 15mm 15mm;}
+body{font-family:'Segoe UI',Arial,sans-serif;color:#1F2937;font-size:11px;}
+.hdr{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:10px;border-bottom:3px solid #0D2B6E;margin-bottom:16px;}
+.co{font-size:20px;font-weight:900;color:#0D2B6E;}.co-sub{font-size:11px;color:#6B7280;margin-top:2px;}
+:root{--illia:#1A4FA8;--illia-bg:#EBF1FF;--illia-border:#90B8F0;--junin:#059669;--junin-bg:#EDFAF2;--junin-border:#80D8A8;--lopez:#B04800;--lopez-bg:#FFF0E0;--lopez-border:#F0C090;--fama-r:#C92B2B;--fama-r-bg:#FFF0F0;--fama-r-border:#F5C0C0;--fama-c:#7B3FBB;--fama-c-bg:#F5EEFF;--fama-c-border:#C9A0F0;--lenar:#0891B2;--lenar-bg:#E0F7FF;--lenar-border:#7DD3E8;}
+.ger-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.ger-kpi{border:1.5px solid #DDE3EE;border-radius:8px;padding:10px;text-align:center;background:#F8FAFF;}
+.ger-kpi-val{font-size:24px;font-weight:900;color:#1A4FA8;}.ger-kpi-lbl{font-size:9px;color:#6B7280;font-weight:700;text-transform:uppercase;margin-top:3px;}.ger-kpi-sub{font-size:10px;color:#9CA3AF;margin-top:2px;}
+.ger-sec-title{font-size:10px;font-weight:800;text-transform:uppercase;color:#0D2B6E;margin-bottom:8px;padding-bottom:5px;border-bottom:2px solid #DDE3EE;}
+.ger-table{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:14px;}
+.ger-table th{background:#0D2B6E;color:#fff;padding:5px 8px;text-align:left;}
+.ger-table td{padding:4px 8px;border-bottom:1px solid #F3F4F6;}
+.ger-table tr:nth-child(even) td{background:#F9FAFB;}
+.suc-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:800;border:1px solid;white-space:nowrap;}
+.suc-badge.illia{background:var(--illia-bg);color:var(--illia);border-color:var(--illia-border);}
+.suc-badge.junin{background:var(--junin-bg);color:var(--junin);border-color:var(--junin-border);}
+.suc-badge.lopez{background:var(--lopez-bg);color:var(--lopez);border-color:var(--lopez-border);}
+.suc-badge.famar{background:var(--fama-r-bg);color:var(--fama-r);border-color:var(--fama-r-border);}
+.suc-badge.famac{background:var(--fama-c-bg);color:var(--fama-c);border-color:var(--fama-c-border);}
+.suc-badge.lenar{background:var(--lenar-bg);color:var(--lenar);border-color:var(--lenar-border);}
+.est-pend{background:#FFF8EC;color:#D47800;border:1px solid #FAD890;border-radius:20px;padding:2px 8px;font-size:9px;font-weight:700;}
+.est-rep{background:#EBF1FF;color:#1A4FA8;border:1px solid #90B8F0;border-radius:20px;padding:2px 8px;font-size:9px;font-weight:700;}
+.est-ent{background:#EDFAF2;color:#059669;border:1px solid #80D8A8;border-radius:20px;padding:2px 8px;font-size:9px;font-weight:700;}
+.pct-bar-wrap{display:flex;align-items:center;gap:5px;}.pct-bar{flex:1;background:#E5E7EB;border-radius:3px;height:6px;overflow:hidden;}.pct-bar-fill{height:100%;border-radius:3px;}
+.foot{margin-top:12px;border-top:1px solid #E5E7EB;padding-top:8px;display:flex;justify-content:space-between;color:#9CA3AF;font-size:9px;}
+</style></head><body>
+<div class="hdr">
+  <div><div class="co">La Llave · Informe Gerencial de Abastecimiento</div><div class="co-sub">Depósito Ruta 11 · ${hoyStr}</div></div>
+  <div style="color:#9CA3AF;font-size:10px">Generado el ${hoyStr}</div>
+</div>
+${body}
+<div class="foot"><span>La Llave · Sistema de Gestión de Depósito</span><span>${hoyStr}</span></div>
+</body></html>`);
+  w.document.close();
+  w.onload = () => { w.focus(); w.print(); };
+}
+
+// ── EXPORTAR EXCEL ────────────────────────────────────────────────────────────
+
+function exportarExcel(){
+  if(!repartos.length){ alert('No hay datos para exportar'); return; }
+  const datos = [
+    ['Sucursal','Fecha','Hora Inicio','Hora Fin','Bultos','Responsable','Estado','Observaciones'],
+    ...repartos.map(r=>[
+      r.sucursal||'', r.fecha||'', r.hora_inicio||'', r.hora_fin||'',
+      r.bultos||0, r.responsable||'', r.estado||'', r.obs||''
+    ])
+  ];
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(datos);
+  ws['!cols'] = [22,12,10,10,8,18,14,30].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, ws, 'Abastecimiento');
+  XLSX.writeFile(wb, `Abastecimiento_LaLlave_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Excel descargado');
 }
 
 async function init(){
