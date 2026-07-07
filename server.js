@@ -216,6 +216,21 @@ app.post('/api/conteos', async (req, res) => {
     }
 });
 
+app.post('/api/conteos/batch', async (req, res) => {
+    try {
+        const items = req.body;
+        if(!Array.isArray(items)) return res.status(400).json({ error: 'Se esperaba un array' });
+        const fecha = new Date().toISOString().slice(0,16).replace('T',' ');
+        for(const it of items){
+            await db.query(
+                'INSERT INTO conteos (fecha, marca, sku, cantidad, contador) VALUES ($1,$2,$3,$4,$5)',
+                [fecha, it.marca, it.sku, it.cantidad||0, it.contador||'']
+            );
+        }
+        res.json({ success: true, imported: items.length });
+    } catch(error){ res.status(500).json({ error: error.message }); }
+});
+
 app.delete('/api/conteos/:id', async (req, res) => {
     try {
         await db.query('DELETE FROM conteos WHERE id = $1', [req.params.id]);

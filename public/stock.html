@@ -25,10 +25,19 @@
       <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg>
       Órdenes
     </a>
+    <button class="btn-report" onclick="abrirGerencialStock()" style="background:linear-gradient(135deg,#312E81,#5B21B6)">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Inf. Gerencial
+    </button>
     <button class="btn-report" onclick="abrirReporte()">
       <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      Reporte
+      Reporte semanal
     </button>
+    <label class="btn-report" style="cursor:pointer" title="Subir Excel con conteos">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Subir Excel
+      <input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="procesarExcel(this)">
+    </label>
     <button class="btn-new" onclick="abrirNuevo()">
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Nuevo conteo
@@ -146,6 +155,41 @@
       <button class="xbtn" onclick="cerrar('mod-reporte')">×</button>
     </div>
     <div class="mbody" id="rep-body"></div>
+  </div>
+</div>
+
+<!-- MODAL SUBIR EXCEL -->
+<div class="overlay" id="mod-excel" onclick="cerrarOv('mod-excel',event)">
+  <div class="mbox" style="max-width:680px">
+    <div class="mhdr" style="background:linear-gradient(135deg,#0A4A28,#1E9A52)">
+      <div><div class="mtitle">Subir Excel de conteos</div><div class="msub">Revisá los datos antes de importar</div></div>
+      <button class="xbtn" onclick="cerrar('mod-excel')">×</button>
+    </div>
+    <div class="mbody">
+      <div id="excel-info" style="font-size:12px;color:#6B7280;margin-bottom:12px"></div>
+      <div style="overflow-x:auto;margin-bottom:16px">
+        <table style="width:100%;border-collapse:collapse;font-size:12px" id="excel-preview"></table>
+      </div>
+      <div id="excel-warn" style="color:#D47800;font-size:12px;margin-bottom:12px"></div>
+      <div class="factions">
+        <button class="btn-save" style="background:linear-gradient(135deg,#0A4A28,#1E9A52)" onclick="confirmarImportacion()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Confirmar importación
+        </button>
+        <button class="btn-cancel" onclick="cerrar('mod-excel')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL INFORME GERENCIAL STOCK -->
+<div class="overlay" id="mod-gerencial-stock" onclick="cerrarOv('mod-gerencial-stock',event)">
+  <div class="mbox" style="max-width:820px">
+    <div class="rep-header-stock">
+      <div><div class="mtitle">Informe Gerencial · Stock</div><div class="msub" id="ger-stock-sub">La Llave · Depósito Ruta 11</div></div>
+      <button class="xbtn" onclick="cerrar('mod-gerencial-stock')">×</button>
+    </div>
+    <div class="mbody" id="ger-stock-body"></div>
   </div>
 </div>
 
