@@ -192,6 +192,22 @@ app.delete('/api/abastecimiento/:id', async (req, res) => {
     } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
+app.post('/api/abastecimiento/batch', async (req, res) => {
+    try {
+        const items = req.body;
+        if(!Array.isArray(items)) return res.status(400).json({ error: 'Se esperaba un array' });
+        const created_at = new Date().toISOString().slice(0,16).replace('T',' ');
+        for(const it of items){
+            await db.query(
+                `INSERT INTO abastecimiento (fecha, hora_inicio, hora_fin, sucursal, bultos, estado, responsable, obs, created_at)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+                [it.fecha||'', it.hora_inicio||'', it.hora_fin||'', it.sucursal||'', parseInt(it.bultos)||0, it.estado||'Pendiente', it.responsable||'', it.obs||'', created_at]
+            );
+        }
+        res.json({ success: true, imported: items.length });
+    } catch(error){ res.status(500).json({ error: error.message }); }
+});
+
 // ── CONTEOS DE STOCK ──────────────────────────────────────────────────────────
 
 app.get('/api/conteos', async (req, res) => {
