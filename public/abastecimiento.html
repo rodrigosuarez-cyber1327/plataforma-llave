@@ -116,6 +116,11 @@ tbody tr:hover td{background:#F9FAFB;}
 
 .empty{text-align:center;padding:40px;color:#9CA3AF;font-size:13px;}
 
+/* TIPO CANAL BADGE */
+.tipo-ped{background:#EBF1FF;color:#1A4FA8;border:1px solid #90B8F0;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}
+.tipo-dis{background:#FFF0E0;color:#B04800;border:1px solid #F0C090;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}
+.sec-divider{grid-column:1/-1;border:none;border-top:1.5px dashed #DDE3EE;margin:4px 0;}
+
 /* BOTONES HEADER EXTRA */
 .btn-ger{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#312E81,#5B21B6);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .15s;}
 .btn-ger:hover{opacity:.88;}
@@ -193,6 +198,11 @@ tbody tr:hover td{background:#F9FAFB;}
       <option>Fama Corrientes</option>
       <option>Lenar Güemes</option>
     </select>
+    <select class="fsel" id="f-tipo" onchange="renderTabla()">
+      <option value="">Pedidos + Distribución</option>
+      <option>Pedido</option>
+      <option>Distribución</option>
+    </select>
     <select class="fsel" id="f-estado" onchange="renderTabla()">
       <option value="">Todos los estados</option>
       <option>Pendiente</option>
@@ -208,8 +218,12 @@ tbody tr:hover td{background:#F9FAFB;}
       <table>
         <thead>
           <tr>
+            <th>Canal</th>
             <th>Sucursal</th>
-            <th>Fecha</th>
+            <th>Fecha 1</th>
+            <th>Hora inicio</th>
+            <th>Hora fin</th>
+            <th>Fecha 2</th>
             <th>Hora inicio</th>
             <th>Hora fin</th>
             <th style="text-align:center">Bultos</th>
@@ -238,7 +252,14 @@ tbody tr:hover td{background:#F9FAFB;}
     </div>
     <div class="mbody">
       <div class="fgrid">
-        <div class="fg full">
+        <div class="fg">
+          <label class="flbl">Canal *</label>
+          <select class="fsel2" id="e-tipo">
+            <option value="Pedido">Pedido</option>
+            <option value="Distribución">Distribución</option>
+          </select>
+        </div>
+        <div class="fg">
           <label class="flbl">Sucursal *</label>
           <select class="fsel2" id="e-suc">
             <option value="">Seleccionar sucursal</option>
@@ -250,8 +271,9 @@ tbody tr:hover td{background:#F9FAFB;}
             <option>Lenar Güemes</option>
           </select>
         </div>
+        <div class="fg full"><hr class="sec-divider"><label class="flbl" style="color:#1A4FA8">— Tramo 1</label></div>
         <div class="fg">
-          <label class="flbl">Fecha *</label>
+          <label class="flbl">Fecha 1 *</label>
           <input class="finp" id="e-fecha" type="date">
         </div>
         <div class="fg">
@@ -259,13 +281,28 @@ tbody tr:hover td{background:#F9FAFB;}
           <input class="finp" id="e-resp" type="text" placeholder="Nombre del repartidor">
         </div>
         <div class="fg">
-          <label class="flbl">Hora inicio</label>
+          <label class="flbl">Hora inicio 1</label>
           <input class="finp" id="e-inicio" type="time">
         </div>
         <div class="fg">
-          <label class="flbl">Hora fin</label>
+          <label class="flbl">Hora fin 1</label>
           <input class="finp" id="e-fin" type="time">
         </div>
+        <div class="fg full"><hr class="sec-divider"><label class="flbl" style="color:#B04800">— Tramo 2 (opcional)</label></div>
+        <div class="fg">
+          <label class="flbl">Fecha 2</label>
+          <input class="finp" id="e-fecha2" type="date">
+        </div>
+        <div class="fg"></div>
+        <div class="fg">
+          <label class="flbl">Hora inicio 2</label>
+          <input class="finp" id="e-inicio2" type="time">
+        </div>
+        <div class="fg">
+          <label class="flbl">Hora fin 2</label>
+          <input class="finp" id="e-fin2" type="time">
+        </div>
+        <div class="fg full"><hr class="sec-divider"></div>
         <div class="fg">
           <label class="flbl">Cantidad de bultos *</label>
           <input class="finp" id="e-bultos" type="number" placeholder="0" min="0">
@@ -310,7 +347,14 @@ tbody tr:hover td{background:#F9FAFB;}
         </div>
       </div>
       <div class="fgrid">
-        <div class="fg full">
+        <div class="fg">
+          <label class="flbl">Canal *</label>
+          <select class="fsel2" id="pdf-tipo">
+            <option value="Pedido">Pedido</option>
+            <option value="Distribución">Distribución</option>
+          </select>
+        </div>
+        <div class="fg">
           <label class="flbl">Sucursal *</label>
           <select class="fsel2" id="pdf-suc">
             <option value="">Seleccionar sucursal</option>
@@ -322,25 +366,41 @@ tbody tr:hover td{background:#F9FAFB;}
             <option>Lenar Güemes</option>
           </select>
         </div>
+        <div class="fg full"><hr class="sec-divider"><label class="flbl" style="color:#1A4FA8">— Tramo 1</label></div>
         <div class="fg">
-          <label class="flbl">Fecha *</label>
+          <label class="flbl">Fecha 1 *</label>
           <input class="finp" id="pdf-fecha" type="date">
         </div>
         <div class="fg">
-          <label class="flbl">Total bultos / unidades</label>
-          <input class="finp" id="pdf-bultos" type="number" min="0">
+          <label class="flbl">Responsable</label>
+          <input class="finp" id="pdf-resp" type="text" placeholder="Nombre del repartidor">
         </div>
         <div class="fg">
-          <label class="flbl">Hora inicio</label>
+          <label class="flbl">Hora inicio 1</label>
           <input class="finp" id="pdf-inicio" type="time">
         </div>
         <div class="fg">
-          <label class="flbl">Hora fin</label>
+          <label class="flbl">Hora fin 1</label>
           <input class="finp" id="pdf-fin" type="time">
         </div>
-        <div class="fg full">
-          <label class="flbl">Responsable</label>
-          <input class="finp" id="pdf-resp" type="text" placeholder="Nombre del repartidor">
+        <div class="fg full"><hr class="sec-divider"><label class="flbl" style="color:#B04800">— Tramo 2 (opcional)</label></div>
+        <div class="fg">
+          <label class="flbl">Fecha 2</label>
+          <input class="finp" id="pdf-fecha2" type="date">
+        </div>
+        <div class="fg"></div>
+        <div class="fg">
+          <label class="flbl">Hora inicio 2</label>
+          <input class="finp" id="pdf-inicio2" type="time">
+        </div>
+        <div class="fg">
+          <label class="flbl">Hora fin 2</label>
+          <input class="finp" id="pdf-fin2" type="time">
+        </div>
+        <div class="fg full"><hr class="sec-divider"></div>
+        <div class="fg">
+          <label class="flbl">Total bultos / unidades</label>
+          <input class="finp" id="pdf-bultos" type="number" min="0">
         </div>
         <div class="fg">
           <label class="flbl">Estado</label>
@@ -435,39 +495,48 @@ function limpiarFiltros(){
   document.getElementById('buscar').value='';
   document.getElementById('f-fecha').value='';
   document.getElementById('f-suc').value='';
+  document.getElementById('f-tipo').value='';
   document.getElementById('f-estado').value='';
   filtroSuc='';
   renderTabla();
 }
+
+function tipoCls(t){ return t==='Distribución'?'tipo-dis':'tipo-ped'; }
 
 function renderTabla(){
   const q    = document.getElementById('buscar').value.toLowerCase();
   const fecha= document.getElementById('f-fecha').value;
   const suc  = document.getElementById('f-suc').value;
   const est  = document.getElementById('f-estado').value;
+  const tipo = document.getElementById('f-tipo').value;
 
   const fil = repartos.filter(r =>
     (!q    || (r.sucursal||'').toLowerCase().includes(q) || (r.responsable||'').toLowerCase().includes(q) || (r.obs||'').toLowerCase().includes(q)) &&
     (!fecha|| r.fecha === fecha) &&
     (!suc  || r.sucursal === suc) &&
-    (!est  || r.estado === est)
+    (!est  || r.estado === est) &&
+    (!tipo || r.tipo === tipo)
   );
 
   if(!fil.length){
-    document.getElementById('tbody').innerHTML = `<tr><td colspan="9" class="empty">Sin registros</td></tr>`;
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="13" class="empty">Sin registros</td></tr>`;
     return;
   }
 
   document.getElementById('tbody').innerHTML = fil.map(r => `
     <tr>
+      <td><span class="${tipoCls(r.tipo)}">${r.tipo||'Pedido'}</span></td>
       <td><span class="suc-badge ${sucCls(r.sucursal)}"><span>●</span>${r.sucursal}</span></td>
       <td style="font-weight:700">${fmtFecha(r.fecha)}</td>
-      <td>${r.hora_inicio||'—'}</td>
-      <td>${r.hora_fin||'—'}</td>
+      <td style="color:#6B7280">${r.hora_inicio||'—'}</td>
+      <td style="color:#6B7280">${r.hora_fin||'—'}</td>
+      <td style="font-weight:700;color:#B04800">${r.fecha2?fmtFecha(r.fecha2):'—'}</td>
+      <td style="color:#6B7280">${r.hora_inicio2||'—'}</td>
+      <td style="color:#6B7280">${r.hora_fin2||'—'}</td>
       <td style="text-align:center"><span class="bultos-num">${r.bultos||'—'}</span></td>
       <td style="color:#374151">${r.responsable||'—'}</td>
       <td><span class="${estCls(r.estado)}">${r.estado||'Pendiente'}</span></td>
-      <td style="color:#6B7280;font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.obs||'—'}</td>
+      <td style="color:#6B7280;font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.obs||'—'}</td>
       <td>
         <button class="btn-edit" onclick="abrirEditar(${r.id})" title="Editar">✏️</button>
         <button class="btn-del"  onclick="eliminar(${r.id})"    title="Eliminar">🗑</button>
@@ -478,11 +547,15 @@ function renderTabla(){
 function abrirNuevo(){
   editId = null;
   document.getElementById('mod-titulo').textContent = 'Nuevo reparto';
+  document.getElementById('e-tipo').value   = 'Pedido';
   document.getElementById('e-suc').value    = '';
   document.getElementById('e-fecha').value  = new Date().toISOString().slice(0,10);
   document.getElementById('e-resp').value   = '';
   document.getElementById('e-inicio').value = '';
   document.getElementById('e-fin').value    = '';
+  document.getElementById('e-fecha2').value  = '';
+  document.getElementById('e-inicio2').value = '';
+  document.getElementById('e-fin2').value    = '';
   document.getElementById('e-bultos').value = '';
   document.getElementById('e-estado').value = 'Pendiente';
   document.getElementById('e-obs').value    = '';
@@ -493,11 +566,15 @@ function abrirEditar(id){
   const r = repartos.find(x=>x.id===id); if(!r) return;
   editId = id;
   document.getElementById('mod-titulo').textContent = 'Editar reparto';
+  document.getElementById('e-tipo').value   = r.tipo||'Pedido';
   document.getElementById('e-suc').value    = r.sucursal||'';
   document.getElementById('e-fecha').value  = r.fecha||'';
   document.getElementById('e-resp').value   = r.responsable||'';
   document.getElementById('e-inicio').value = r.hora_inicio||'';
   document.getElementById('e-fin').value    = r.hora_fin||'';
+  document.getElementById('e-fecha2').value  = r.fecha2||'';
+  document.getElementById('e-inicio2').value = r.hora_inicio2||'';
+  document.getElementById('e-fin2').value    = r.hora_fin2||'';
   document.getElementById('e-bultos').value = r.bultos||'';
   document.getElementById('e-estado').value = r.estado||'Pendiente';
   document.getElementById('e-obs').value    = r.obs||'';
@@ -509,10 +586,14 @@ async function guardar(){
   const fecha = document.getElementById('e-fecha').value;
   if(!suc||!fecha){ alert('Sucursal y fecha son obligatorios'); return; }
   const body = {
+    tipo:        document.getElementById('e-tipo').value,
     sucursal:    suc,
     fecha:       fecha,
     hora_inicio: document.getElementById('e-inicio').value,
     hora_fin:    document.getElementById('e-fin').value,
+    fecha2:      document.getElementById('e-fecha2').value,
+    hora_inicio2:document.getElementById('e-inicio2').value,
+    hora_fin2:   document.getElementById('e-fin2').value,
     bultos:      parseInt(document.getElementById('e-bultos').value)||0,
     estado:      document.getElementById('e-estado').value,
     responsable: document.getElementById('e-resp').value,
@@ -612,12 +693,16 @@ async function procesarPDF(input){
 
     document.getElementById('pdf-remito').textContent  = remito || '—';
     document.getElementById('pdf-lineas').textContent  = `${itemMatches.length} líneas · ${totalUnidades.toLocaleString('es-AR')} unidades totales`;
+    document.getElementById('pdf-tipo').value          = 'Pedido';
     document.getElementById('pdf-suc').value           = sucursal;
     document.getElementById('pdf-fecha').value         = fecha;
     document.getElementById('pdf-bultos').value        = totalUnidades;
     document.getElementById('pdf-obs').value           = remito ? `Remito ${remito}` : '';
     document.getElementById('pdf-inicio').value        = '';
     document.getElementById('pdf-fin').value           = '';
+    document.getElementById('pdf-fecha2').value        = '';
+    document.getElementById('pdf-inicio2').value       = '';
+    document.getElementById('pdf-fin2').value          = '';
     document.getElementById('pdf-resp').value          = '';
     document.getElementById('pdf-estado').value        = 'Pendiente';
 
@@ -633,10 +718,14 @@ async function confirmarPDF(){
   if(!suc || !fecha){ alert('Sucursal y fecha son obligatorios'); return; }
 
   const body = {
+    tipo:         document.getElementById('pdf-tipo').value,
     sucursal:    suc,
     fecha:       fecha,
     hora_inicio: document.getElementById('pdf-inicio').value,
     hora_fin:    document.getElementById('pdf-fin').value,
+    fecha2:      document.getElementById('pdf-fecha2').value,
+    hora_inicio2:document.getElementById('pdf-inicio2').value,
+    hora_fin2:   document.getElementById('pdf-fin2').value,
     bultos:      parseInt(document.getElementById('pdf-bultos').value)||0,
     estado:      document.getElementById('pdf-estado').value,
     responsable: document.getElementById('pdf-resp').value,
@@ -662,9 +751,23 @@ async function confirmarPDF(){
 
 // ── INFORME GERENCIAL ─────────────────────────────────────────────────────────
 
+function canalStats(lista){
+  const tot  = lista.length;
+  const bult = lista.reduce((s,r)=>s+(r.bultos||0),0);
+  const ent  = lista.filter(r=>r.estado==='Entregado').length;
+  const pct  = tot>0?Math.round(ent/tot*100):0;
+  const col  = pct>=90?'#059669':pct>=70?'#D47800':'#C92B2B';
+  return {tot,bult,ent,pct,col};
+}
+
 function abrirGerencial(){
-  const hoy = new Date().toISOString().slice(0,10);
+  const hoy    = new Date().toISOString().slice(0,10);
   const hoyStr = new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+
+  const pedidos = repartos.filter(r=>(r.tipo||'Pedido')==='Pedido');
+  const distrib = repartos.filter(r=>r.tipo==='Distribución');
+  const sp = canalStats(pedidos);
+  const sd = canalStats(distrib);
 
   const totalRep   = repartos.length;
   const totalBult  = repartos.reduce((s,r)=>s+(r.bultos||0),0);
@@ -737,8 +840,34 @@ function abrirGerencial(){
       <div class="ger-kpi"><div class="ger-kpi-val">${totalRep}</div><div class="ger-kpi-lbl">Total repartos</div><div class="ger-kpi-sub">${hoyRep} hoy</div></div>
       <div class="ger-kpi"><div class="ger-kpi-val">${totalBult}</div><div class="ger-kpi-lbl">Bultos despachados</div><div class="ger-kpi-sub">${hoyBult} hoy</div></div>
       <div class="ger-kpi"><div class="ger-kpi-val" style="color:#059669">${entregados}</div><div class="ger-kpi-lbl">Entregados</div><div class="ger-kpi-sub">de ${totalRep} repartos</div></div>
-      <div class="ger-kpi"><div class="ger-kpi-val" style="color:${pctColor}">${pctCumpl}%</div><div class="ger-kpi-lbl">% Cumplimiento</div><div class="ger-kpi-sub">${pctColor==='#059669'?'Excelente':pctColor==='#D47800'?'Regular':'Bajo'}</div></div>
+      <div class="ger-kpi"><div class="ger-kpi-val" style="color:${pctColor}">${pctCumpl}%</div><div class="ger-kpi-lbl">% Cumplimiento general</div><div class="ger-kpi-sub">${pctColor==='#059669'?'Excelente':pctColor==='#D47800'?'Regular':'Bajo'}</div></div>
     </div>
+    <div class="ger-sec-title">Resumen por canal</div>
+    <table class="ger-table" style="margin-bottom:20px">
+      <thead><tr><th>Canal</th><th style="text-align:center">Repartos</th><th style="text-align:center">Bultos</th><th style="text-align:center">Entregados</th><th style="text-align:center">% Cumplimiento</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="tipo-ped">Pedido</span></td>
+          <td style="text-align:center;font-weight:700">${sp.tot}</td>
+          <td style="text-align:center;font-weight:700">${sp.bult}</td>
+          <td style="text-align:center">${sp.ent}</td>
+          <td style="text-align:center">
+            <div class="pct-bar-wrap"><div class="pct-bar"><div class="pct-bar-fill" style="width:${sp.pct}%;background:${sp.col}"></div></div>
+            <span style="font-size:11px;font-weight:700;color:${sp.col};min-width:34px">${sp.pct}%</span></div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="tipo-dis">Distribución</span></td>
+          <td style="text-align:center;font-weight:700">${sd.tot}</td>
+          <td style="text-align:center;font-weight:700">${sd.bult}</td>
+          <td style="text-align:center">${sd.ent}</td>
+          <td style="text-align:center">
+            <div class="pct-bar-wrap"><div class="pct-bar"><div class="pct-bar-fill" style="width:${sd.pct}%;background:${sd.col}"></div></div>
+            <span style="font-size:11px;font-weight:700;color:${sd.col};min-width:34px">${sd.pct}%</span></div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
     <div class="ger-sec-title">Repartos por sucursal</div>
     <table class="ger-table">
       <thead><tr><th>Sucursal</th><th style="text-align:center">Repartos</th><th style="text-align:center">Bultos</th><th style="text-align:center">Entregados</th><th style="text-align:center">% Cumplimiento</th></tr></thead>

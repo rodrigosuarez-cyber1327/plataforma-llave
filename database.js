@@ -69,6 +69,12 @@ async function setupDatabase() {
         )
     `);
 
+    // Columnas nuevas para abastecimiento
+    await pool.query(`ALTER TABLE abastecimiento ADD COLUMN IF NOT EXISTS tipo TEXT DEFAULT 'Pedido'`);
+    await pool.query(`ALTER TABLE abastecimiento ADD COLUMN IF NOT EXISTS fecha2 TEXT DEFAULT ''`);
+    await pool.query(`ALTER TABLE abastecimiento ADD COLUMN IF NOT EXISTS hora_inicio2 TEXT DEFAULT ''`);
+    await pool.query(`ALTER TABLE abastecimiento ADD COLUMN IF NOT EXISTS hora_fin2 TEXT DEFAULT ''`);
+
     return pool;
 }
 
