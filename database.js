@@ -74,6 +74,9 @@ async function setupDatabase() {
     await pool.query(`ALTER TABLE abastecimiento ADD COLUMN IF NOT EXISTS fecha2 TEXT DEFAULT ''`);
     await pool.query(`ALTER TABLE abastecimiento ADD COLUMN IF NOT EXISTS hora_inicio2 TEXT DEFAULT ''`);
     await pool.query(`ALTER TABLE abastecimiento ADD COLUMN IF NOT EXISTS hora_fin2 TEXT DEFAULT ''`);
+    await pool.query(`ALTER TABLE abastecimiento ADD COLUMN IF NOT EXISTS controlador TEXT DEFAULT ''`);
+    await pool.query(`ALTER TABLE abastecimiento ADD COLUMN IF NOT EXISTS ctrl_items INTEGER DEFAULT 0`);
+    await pool.query(`ALTER TABLE abastecimiento ADD COLUMN IF NOT EXISTS ctrl_unidades INTEGER DEFAULT 0`);
 
     return pool;
 }
