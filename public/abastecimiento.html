@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Abastecimiento a Sucursales · La Llave</title>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F4FA;color:#1F2937;min-height:100vh;}
@@ -163,15 +163,11 @@ tbody tr:hover td{background:#F9FAFB;}
       <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       Inf. Gerencial
     </button>
-    <label class="btn-xl" style="cursor:pointer" title="Subir Excel con repartos">
-      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      Subir Excel
-      <input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="procesarExcelAbas(this)">
+    <label class="btn-xl" style="cursor:pointer" title="Subir remito en PDF">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Subir Remito PDF
+      <input type="file" accept=".pdf" style="display:none" onchange="procesarPDF(this)">
     </label>
-    <button class="btn-xl" onclick="exportarExcel()">
-      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Exportar Excel
-    </button>
     <button class="btn-new" onclick="abrirNuevo()">
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Nuevo reparto
@@ -298,25 +294,73 @@ tbody tr:hover td{background:#F9FAFB;}
   </div>
 </div>
 
-<!-- MODAL SUBIR EXCEL -->
-<div class="overlay" id="mod-excel-abas" onclick="cerrarOv('mod-excel-abas',event)">
-  <div class="mbox" style="max-width:700px">
+<!-- MODAL SUBIR REMITO PDF -->
+<div class="overlay" id="mod-pdf" onclick="cerrarOv('mod-pdf',event)">
+  <div class="mbox" style="max-width:560px">
     <div class="mhdr">
-      <div><div class="mtitle">Subir Excel de repartos</div><div class="msub">Revisá los datos antes de importar</div></div>
-      <button class="xbtn" onclick="cerrar('mod-excel-abas')">×</button>
+      <div><div class="mtitle">Cargar Remito PDF</div><div class="msub">Datos detectados automáticamente · revisá antes de guardar</div></div>
+      <button class="xbtn" onclick="cerrar('mod-pdf')">×</button>
     </div>
     <div class="mbody">
-      <div id="excel-abas-info" style="font-size:12px;color:#6B7280;margin-bottom:10px"></div>
-      <div style="overflow-x:auto;margin-bottom:14px;max-height:320px;overflow-y:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:12px" id="excel-abas-preview"></table>
+      <div style="background:#EBF1FF;border-radius:8px;padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <svg width="18" height="18" fill="none" stroke="#1A4FA8" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <div>
+          <div style="font-size:13px;font-weight:800;color:#0D2B6E">Remito N° <span id="pdf-remito">—</span></div>
+          <div style="font-size:11px;color:#6B7280" id="pdf-lineas"></div>
+        </div>
       </div>
-      <div id="excel-abas-warn" style="color:#D47800;font-size:12px;margin-bottom:12px"></div>
+      <div class="fgrid">
+        <div class="fg full">
+          <label class="flbl">Sucursal *</label>
+          <select class="fsel2" id="pdf-suc">
+            <option value="">Seleccionar sucursal</option>
+            <option>Sucursal Illia</option>
+            <option>Sucursal Junín</option>
+            <option>Sucursal López y Planes</option>
+            <option>Fama Resistencia</option>
+            <option>Fama Corrientes</option>
+            <option>Lenar Güemes</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="flbl">Fecha *</label>
+          <input class="finp" id="pdf-fecha" type="date">
+        </div>
+        <div class="fg">
+          <label class="flbl">Total bultos / unidades</label>
+          <input class="finp" id="pdf-bultos" type="number" min="0">
+        </div>
+        <div class="fg">
+          <label class="flbl">Hora inicio</label>
+          <input class="finp" id="pdf-inicio" type="time">
+        </div>
+        <div class="fg">
+          <label class="flbl">Hora fin</label>
+          <input class="finp" id="pdf-fin" type="time">
+        </div>
+        <div class="fg full">
+          <label class="flbl">Responsable</label>
+          <input class="finp" id="pdf-resp" type="text" placeholder="Nombre del repartidor">
+        </div>
+        <div class="fg">
+          <label class="flbl">Estado</label>
+          <select class="fsel2" id="pdf-estado">
+            <option>Pendiente</option>
+            <option>En reparto</option>
+            <option>Entregado</option>
+          </select>
+        </div>
+        <div class="fg full">
+          <label class="flbl">Observaciones</label>
+          <textarea class="ftxt" id="pdf-obs" placeholder="Notas adicionales..."></textarea>
+        </div>
+      </div>
       <div class="factions">
-        <button class="btn-save" id="btn-confirmar-abas" onclick="confirmarImportacionAbas()">
-          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-          Confirmar importación
+        <button class="btn-save" id="btn-confirmar-pdf" onclick="confirmarPDF()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+          Guardar reparto
         </button>
-        <button class="btn-cancel" onclick="cerrar('mod-excel-abas')">Cancelar</button>
+        <button class="btn-cancel" onclick="cerrar('mod-pdf')">Cancelar</button>
       </div>
     </div>
   </div>
@@ -509,93 +553,110 @@ function toast(msg){
   document.body.appendChild(t); setTimeout(()=>t.remove(),2500);
 }
 
-// ── SUBIR EXCEL ───────────────────────────────────────────────────────────────
+// ── SUBIR REMITO PDF ──────────────────────────────────────────────────────────
 
-const SUCURSALES_NOMBRES = ['Sucursal Illia','Sucursal Junín','Sucursal López y Planes','Fama Resistencia','Fama Corrientes','Lenar Güemes'];
-let excelAbasData = [];
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-function procesarExcelAbas(input){
-  const file = input.files[0]; if(!file) return;
-  input.value = '';
-  const reader = new FileReader();
-  reader.onload = e => {
-    const wb  = XLSX.read(e.target.result, { type:'array' });
-    const ws  = wb.Sheets[wb.SheetNames[0]];
-    const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
-    if(!raw.length){ alert('El archivo está vacío'); return; }
+const NOMBRE_MAP = {
+  'junin':'Sucursal Junín','junín':'Sucursal Junín',
+  'illia':'Sucursal Illia',
+  'lopez':'Sucursal López y Planes','lópez':'Sucursal López y Planes','lopez y planes':'Sucursal López y Planes',
+  'fama resistencia':'Fama Resistencia','resistencia':'Fama Resistencia',
+  'fama corrientes':'Fama Corrientes','corrientes':'Fama Corrientes',
+  'lenar':'Lenar Güemes','güemes':'Lenar Güemes','guemes':'Lenar Güemes',
+};
 
-    const cab = raw[0].map(c => String(c).toUpperCase().trim());
-    const iSuc  = cab.findIndex(c => c.includes('SUCURSAL'));
-    const iFecha= cab.findIndex(c => c.includes('FECHA'));
-    const iIni  = cab.findIndex(c => c.includes('INICIO'));
-    const iFin  = cab.findIndex(c => c.includes('FIN') && !c.includes('INICIO'));
-    const iBult = cab.findIndex(c => c.includes('BULTO'));
-    const iResp = cab.findIndex(c => c.includes('RESPONSABLE'));
-    const iEst  = cab.findIndex(c => c.includes('ESTADO'));
-    const iObs  = cab.findIndex(c => c.includes('OBS'));
-
-    const filas = raw.slice(1).filter(r => r.some(v => String(v).trim()));
-    excelAbasData = filas.map(r => ({
-      sucursal:    iSuc>=0  ? String(r[iSuc]||'').trim()  : String(r[0]||'').trim(),
-      fecha:       iFecha>=0? String(r[iFecha]||'').trim(): String(r[1]||'').trim(),
-      hora_inicio: iIni>=0  ? String(r[iIni]||'').trim()  : String(r[2]||'').trim(),
-      hora_fin:    iFin>=0  ? String(r[iFin]||'').trim()  : String(r[3]||'').trim(),
-      bultos:      iBult>=0 ? parseInt(r[iBult])||0        : parseInt(r[4])||0,
-      responsable: iResp>=0 ? String(r[iResp]||'').trim() : String(r[5]||'').trim(),
-      estado:      iEst>=0  ? String(r[iEst]||'').trim()  : 'Pendiente',
-      obs:         iObs>=0  ? String(r[iObs]||'').trim()  : String(r[7]||'').trim(),
-    })).filter(r => r.sucursal || r.fecha);
-
-    if(!excelAbasData.length){ alert('No se encontraron filas con datos'); return; }
-
-    const sinSuc = excelAbasData.filter(r => !SUCURSALES_NOMBRES.includes(r.sucursal)).length;
-    document.getElementById('excel-abas-info').innerHTML =
-      `<strong>${excelAbasData.length} filas</strong> detectadas del archivo <em>${file.name}</em>`;
-    document.getElementById('excel-abas-warn').textContent =
-      sinSuc > 0 ? `⚠️ ${sinSuc} filas tienen sucursal no reconocida — se importarán igual` : '';
-
-    const prev = excelAbasData.slice(0,12);
-    const cls  = r => sucCls(r.sucursal);
-    document.getElementById('excel-abas-preview').innerHTML = `
-      <thead><tr style="background:#EBF1FF">
-        <th style="padding:6px 10px;text-align:left;font-size:10px;color:#0D2B6E">SUCURSAL</th>
-        <th style="padding:6px 10px;font-size:10px;color:#0D2B6E">FECHA</th>
-        <th style="padding:6px 10px;font-size:10px;color:#0D2B6E">INICIO</th>
-        <th style="padding:6px 10px;font-size:10px;color:#0D2B6E">FIN</th>
-        <th style="padding:6px 10px;text-align:center;font-size:10px;color:#0D2B6E">BULTOS</th>
-        <th style="padding:6px 10px;font-size:10px;color:#0D2B6E">RESPONSABLE</th>
-        <th style="padding:6px 10px;font-size:10px;color:#0D2B6E">ESTADO</th>
-      </tr></thead>
-      <tbody>${prev.map(r=>`<tr>
-        <td style="padding:5px 10px;border-bottom:1px solid #F3F4F6"><span class="suc-badge ${cls(r)}">● ${r.sucursal||'—'}</span></td>
-        <td style="padding:5px 10px;border-bottom:1px solid #F3F4F6">${r.fecha||'—'}</td>
-        <td style="padding:5px 10px;border-bottom:1px solid #F3F4F6;color:#6B7280">${r.hora_inicio||'—'}</td>
-        <td style="padding:5px 10px;border-bottom:1px solid #F3F4F6;color:#6B7280">${r.hora_fin||'—'}</td>
-        <td style="padding:5px 10px;border-bottom:1px solid #F3F4F6;text-align:center;font-weight:700">${r.bultos}</td>
-        <td style="padding:5px 10px;border-bottom:1px solid #F3F4F6">${r.responsable||'—'}</td>
-        <td style="padding:5px 10px;border-bottom:1px solid #F3F4F6"><span class="${estCls(r.estado)}">${r.estado||'Pendiente'}</span></td>
-      </tr>`).join('')}
-      ${excelAbasData.length>12?`<tr><td colspan="7" style="padding:8px 10px;color:#9CA3AF;font-size:11px;text-align:center">... y ${excelAbasData.length-12} filas más</td></tr>`:''}</tbody>`;
-
-    document.getElementById('mod-excel-abas').classList.add('open');
-  };
-  reader.readAsArrayBuffer(file);
+function detectarSucursal(texto){
+  if(!texto) return '';
+  const t = texto.toLowerCase().trim();
+  for(const [k,v] of Object.entries(NOMBRE_MAP)){
+    if(t.includes(k)) return v;
+  }
+  return '';
 }
 
-async function confirmarImportacionAbas(){
-  if(!excelAbasData.length) return;
-  const btn = document.getElementById('btn-confirmar-abas');
-  btn.disabled = true; btn.textContent = 'Importando…';
+async function procesarPDF(input){
+  const file = input.files[0]; if(!file) return;
+  input.value = '';
+
   try {
-    const res = await axios.post('/api/abastecimiento/batch', excelAbasData);
-    cerrar('mod-excel-abas');
-    await init();
-    toast(`✅ ${res.data.imported} repartos importados`);
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    let fullText = '';
+    for(let i = 1; i <= pdf.numPages; i++){
+      const page    = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      fullText += content.items.map(it => it.str).join(' ') + '\n';
+    }
+
+    // Remito número
+    const remMatch = fullText.match(/Remito\s+Numero[:\s]+([\w-]+)/i);
+    const remito   = remMatch ? remMatch[1] : '';
+
+    // Fecha → yyyy-mm-dd
+    const fMatch = fullText.match(/Fecha[:\s]+(\d{2})\/(\d{2})\/(\d{4})/i);
+    const fecha  = fMatch ? `${fMatch[3]}-${fMatch[2]}-${fMatch[1]}` : '';
+
+    // Sucursal desde "Nombre: Junin"
+    const nomMatch = fullText.match(/Nombre[:\s]+([^\n\r]+)/i);
+    const sucursal = nomMatch ? detectarSucursal(nomMatch[1]) : '';
+
+    // Sumar cantidades: número seguido de código SKU de 6 dígitos
+    const itemMatches = [...fullText.matchAll(/\b(\d[\d\.]*(?:,\d+)?)\s+\d{5,6}\s+[A-Z]/g)];
+    let totalUnidades = 0;
+    itemMatches.forEach(m => {
+      const n = parseInt(m[1].replace(/[.,]/g,'')) || 0;
+      totalUnidades += n;
+    });
+
+    document.getElementById('pdf-remito').textContent  = remito || '—';
+    document.getElementById('pdf-lineas').textContent  = `${itemMatches.length} líneas · ${totalUnidades.toLocaleString('es-AR')} unidades totales`;
+    document.getElementById('pdf-suc').value           = sucursal;
+    document.getElementById('pdf-fecha').value         = fecha;
+    document.getElementById('pdf-bultos').value        = totalUnidades;
+    document.getElementById('pdf-obs').value           = remito ? `Remito ${remito}` : '';
+    document.getElementById('pdf-inicio').value        = '';
+    document.getElementById('pdf-fin').value           = '';
+    document.getElementById('pdf-resp').value          = '';
+    document.getElementById('pdf-estado').value        = 'Pendiente';
+
+    document.getElementById('mod-pdf').classList.add('open');
   } catch(e){
-    alert('Error al importar: ' + (e.response?.data?.error || e.message));
+    alert('No se pudo leer el PDF: ' + e.message);
+  }
+}
+
+async function confirmarPDF(){
+  const suc   = document.getElementById('pdf-suc').value;
+  const fecha = document.getElementById('pdf-fecha').value;
+  if(!suc || !fecha){ alert('Sucursal y fecha son obligatorios'); return; }
+
+  const body = {
+    sucursal:    suc,
+    fecha:       fecha,
+    hora_inicio: document.getElementById('pdf-inicio').value,
+    hora_fin:    document.getElementById('pdf-fin').value,
+    bultos:      parseInt(document.getElementById('pdf-bultos').value)||0,
+    estado:      document.getElementById('pdf-estado').value,
+    responsable: document.getElementById('pdf-resp').value,
+    obs:         document.getElementById('pdf-obs').value,
+  };
+
+  const btn = document.getElementById('btn-confirmar-pdf');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    const res = await axios.post('/api/abastecimiento', body);
+    repartos.unshift({ id: res.data.id, ...body });
+    cerrar('mod-pdf');
+    renderMetrics();
+    renderTabla();
+    toast('Remito cargado correctamente');
+  } catch(e){
+    alert('Error al guardar: ' + (e.response?.data?.error || e.message));
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Confirmar importación';
+    btn.innerHTML = '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg> Guardar reparto';
   }
 }
 
