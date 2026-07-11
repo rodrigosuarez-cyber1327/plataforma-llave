@@ -308,13 +308,26 @@ tbody tr:hover td{background:#F9FAFB;}
           <input class="finp" id="e-controlador" type="text" placeholder="Nombre de quien controla">
         </div>
         <div class="fg">
-          <label class="flbl">Ítems controlados</label>
-          <input class="finp" id="e-ctrl-items" type="number" min="0" placeholder="0">
+          <label class="flbl">Fecha inicio</label>
+          <input class="finp" id="e-ctrl-fi" type="date">
         </div>
         <div class="fg">
-          <label class="flbl">Unidades controladas</label>
-          <input class="finp" id="e-ctrl-unidades" type="number" min="0" placeholder="0">
+          <label class="flbl">Fecha fin</label>
+          <input class="finp" id="e-ctrl-ff" type="date">
         </div>
+        <div class="fg">
+          <label class="flbl">Hora inicio</label>
+          <input class="finp" id="e-ctrl-hi" type="time">
+        </div>
+        <div class="fg">
+          <label class="flbl">Hora fin</label>
+          <input class="finp" id="e-ctrl-hf" type="time">
+        </div>
+        <div class="fg">
+          <label class="flbl">Ítems</label>
+          <input class="finp" id="e-ctrl-items" type="number" min="0" placeholder="0">
+        </div>
+        <div class="fg"></div>
         <div class="fg full"><hr class="sec-divider"></div>
         <div class="fg">
           <label class="flbl">Cantidad de bultos *</label>
@@ -416,13 +429,26 @@ tbody tr:hover td{background:#F9FAFB;}
           <input class="finp" id="pdf-controlador" type="text" placeholder="Nombre de quien controla">
         </div>
         <div class="fg">
-          <label class="flbl">Ítems controlados</label>
-          <input class="finp" id="pdf-ctrl-items" type="number" min="0" placeholder="0">
+          <label class="flbl">Fecha inicio</label>
+          <input class="finp" id="pdf-ctrl-fi" type="date">
         </div>
         <div class="fg">
-          <label class="flbl">Unidades controladas</label>
-          <input class="finp" id="pdf-ctrl-unidades" type="number" min="0" placeholder="0">
+          <label class="flbl">Fecha fin</label>
+          <input class="finp" id="pdf-ctrl-ff" type="date">
         </div>
+        <div class="fg">
+          <label class="flbl">Hora inicio</label>
+          <input class="finp" id="pdf-ctrl-hi" type="time">
+        </div>
+        <div class="fg">
+          <label class="flbl">Hora fin</label>
+          <input class="finp" id="pdf-ctrl-hf" type="time">
+        </div>
+        <div class="fg">
+          <label class="flbl">Ítems</label>
+          <input class="finp" id="pdf-ctrl-items" type="number" min="0" placeholder="0">
+        </div>
+        <div class="fg"></div>
         <div class="fg full"><hr class="sec-divider"></div>
         <div class="fg">
           <label class="flbl">Total bultos / unidades</label>
@@ -582,9 +608,12 @@ function abrirNuevo(){
   document.getElementById('e-fecha2').value       = '';
   document.getElementById('e-inicio2').value      = '';
   document.getElementById('e-fin2').value         = '';
-  document.getElementById('e-controlador').value  = '';
-  document.getElementById('e-ctrl-items').value   = '';
-  document.getElementById('e-ctrl-unidades').value= '';
+  document.getElementById('e-controlador').value = '';
+  document.getElementById('e-ctrl-fi').value     = '';
+  document.getElementById('e-ctrl-ff').value     = '';
+  document.getElementById('e-ctrl-hi').value     = '';
+  document.getElementById('e-ctrl-hf').value     = '';
+  document.getElementById('e-ctrl-items').value  = '';
   document.getElementById('e-bultos').value = '';
   document.getElementById('e-estado').value = 'Pendiente';
   document.getElementById('e-obs').value    = '';
@@ -604,9 +633,12 @@ function abrirEditar(id){
   document.getElementById('e-fecha2').value       = r.fecha2||'';
   document.getElementById('e-inicio2').value      = r.hora_inicio2||'';
   document.getElementById('e-fin2').value         = r.hora_fin2||'';
-  document.getElementById('e-controlador').value  = r.controlador||'';
-  document.getElementById('e-ctrl-items').value   = r.ctrl_items||'';
-  document.getElementById('e-ctrl-unidades').value= r.ctrl_unidades||'';
+  document.getElementById('e-controlador').value = r.controlador||'';
+  document.getElementById('e-ctrl-fi').value     = r.ctrl_fecha_inicio||'';
+  document.getElementById('e-ctrl-ff').value     = r.ctrl_fecha_fin||'';
+  document.getElementById('e-ctrl-hi').value     = r.ctrl_hora_inicio||'';
+  document.getElementById('e-ctrl-hf').value     = r.ctrl_hora_fin||'';
+  document.getElementById('e-ctrl-items').value  = r.ctrl_items||'';
   document.getElementById('e-bultos').value = r.bultos||'';
   document.getElementById('e-estado').value = r.estado||'Pendiente';
   document.getElementById('e-obs').value    = r.obs||'';
@@ -626,9 +658,12 @@ async function guardar(){
     fecha2:       document.getElementById('e-fecha2').value,
     hora_inicio2: document.getElementById('e-inicio2').value,
     hora_fin2:    document.getElementById('e-fin2').value,
-    controlador:  document.getElementById('e-controlador').value,
-    ctrl_items:   parseInt(document.getElementById('e-ctrl-items').value)||0,
-    ctrl_unidades:parseInt(document.getElementById('e-ctrl-unidades').value)||0,
+    controlador:      document.getElementById('e-controlador').value,
+    ctrl_fecha_inicio:document.getElementById('e-ctrl-fi').value,
+    ctrl_fecha_fin:   document.getElementById('e-ctrl-ff').value,
+    ctrl_hora_inicio: document.getElementById('e-ctrl-hi').value,
+    ctrl_hora_fin:    document.getElementById('e-ctrl-hf').value,
+    ctrl_items:       parseInt(document.getElementById('e-ctrl-items').value)||0,
     bultos:      parseInt(document.getElementById('e-bultos').value)||0,
     estado:      document.getElementById('e-estado').value,
     responsable: document.getElementById('e-resp').value,
@@ -738,9 +773,12 @@ async function procesarPDF(input){
     document.getElementById('pdf-fecha2').value         = '';
     document.getElementById('pdf-inicio2').value        = '';
     document.getElementById('pdf-fin2').value           = '';
-    document.getElementById('pdf-controlador').value    = '';
-    document.getElementById('pdf-ctrl-items').value     = '';
-    document.getElementById('pdf-ctrl-unidades').value  = '';
+    document.getElementById('pdf-controlador').value = '';
+    document.getElementById('pdf-ctrl-fi').value     = '';
+    document.getElementById('pdf-ctrl-ff').value     = '';
+    document.getElementById('pdf-ctrl-hi').value     = '';
+    document.getElementById('pdf-ctrl-hf').value     = '';
+    document.getElementById('pdf-ctrl-items').value  = '';
     document.getElementById('pdf-resp').value           = '';
     document.getElementById('pdf-estado').value        = 'Pendiente';
 
@@ -764,9 +802,12 @@ async function confirmarPDF(){
     fecha2:       document.getElementById('pdf-fecha2').value,
     hora_inicio2: document.getElementById('pdf-inicio2').value,
     hora_fin2:    document.getElementById('pdf-fin2').value,
-    controlador:  document.getElementById('pdf-controlador').value,
-    ctrl_items:   parseInt(document.getElementById('pdf-ctrl-items').value)||0,
-    ctrl_unidades:parseInt(document.getElementById('pdf-ctrl-unidades').value)||0,
+    controlador:      document.getElementById('pdf-controlador').value,
+    ctrl_fecha_inicio:document.getElementById('pdf-ctrl-fi').value,
+    ctrl_fecha_fin:   document.getElementById('pdf-ctrl-ff').value,
+    ctrl_hora_inicio: document.getElementById('pdf-ctrl-hi').value,
+    ctrl_hora_fin:    document.getElementById('pdf-ctrl-hf').value,
+    ctrl_items:       parseInt(document.getElementById('pdf-ctrl-items').value)||0,
     bultos:      parseInt(document.getElementById('pdf-bultos').value)||0,
     estado:      document.getElementById('pdf-estado').value,
     responsable: document.getElementById('pdf-resp').value,

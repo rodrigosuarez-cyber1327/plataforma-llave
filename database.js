@@ -77,6 +77,10 @@ async function setupDatabase() {
     await pool.query(`ALTER TABLE abastecimiento ADD COLUMN IF NOT EXISTS controlador TEXT DEFAULT ''`);
     await pool.query(`ALTER TABLE abastecimiento ADD COLUMN IF NOT EXISTS ctrl_items INTEGER DEFAULT 0`);
     await pool.query(`ALTER TABLE abastecimiento ADD COLUMN IF NOT EXISTS ctrl_unidades INTEGER DEFAULT 0`);
+    await pool.query(`ALTER TABLE abastecimiento ADD COLUMN IF NOT EXISTS ctrl_fecha_inicio TEXT DEFAULT ''`);
+    await pool.query(`ALTER TABLE abastecimiento ADD COLUMN IF NOT EXISTS ctrl_fecha_fin TEXT DEFAULT ''`);
+    await pool.query(`ALTER TABLE abastecimiento ADD COLUMN IF NOT EXISTS ctrl_hora_inicio TEXT DEFAULT ''`);
+    await pool.query(`ALTER TABLE abastecimiento ADD COLUMN IF NOT EXISTS ctrl_hora_fin TEXT DEFAULT ''`);
 
     return pool;
 }

@@ -162,12 +162,12 @@ app.get('/api/abastecimiento', async (req, res) => {
 
 app.post('/api/abastecimiento', async (req, res) => {
     try {
-        const { fecha, hora_inicio, hora_fin, sucursal, bultos, estado, responsable, obs, tipo, fecha2, hora_inicio2, hora_fin2, controlador, ctrl_items, ctrl_unidades } = req.body;
+        const { fecha, hora_inicio, hora_fin, sucursal, bultos, estado, responsable, obs, tipo, fecha2, hora_inicio2, hora_fin2, controlador, ctrl_items, ctrl_fecha_inicio, ctrl_fecha_fin, ctrl_hora_inicio, ctrl_hora_fin } = req.body;
         const created_at = new Date().toISOString().slice(0,16).replace('T',' ');
         const result = await db.query(
-            `INSERT INTO abastecimiento (fecha, hora_inicio, hora_fin, sucursal, bultos, estado, responsable, obs, created_at, tipo, fecha2, hora_inicio2, hora_fin2, controlador, ctrl_items, ctrl_unidades)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING id`,
-            [fecha, hora_inicio, hora_fin, sucursal, bultos, estado||'Pendiente', responsable, obs, created_at, tipo||'Pedido', fecha2||'', hora_inicio2||'', hora_fin2||'', controlador||'', parseInt(ctrl_items)||0, parseInt(ctrl_unidades)||0]
+            `INSERT INTO abastecimiento (fecha, hora_inicio, hora_fin, sucursal, bultos, estado, responsable, obs, created_at, tipo, fecha2, hora_inicio2, hora_fin2, controlador, ctrl_items, ctrl_fecha_inicio, ctrl_fecha_fin, ctrl_hora_inicio, ctrl_hora_fin)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING id`,
+            [fecha, hora_inicio, hora_fin, sucursal, bultos, estado||'Pendiente', responsable, obs, created_at, tipo||'Pedido', fecha2||'', hora_inicio2||'', hora_fin2||'', controlador||'', parseInt(ctrl_items)||0, ctrl_fecha_inicio||'', ctrl_fecha_fin||'', ctrl_hora_inicio||'', ctrl_hora_fin||'']
         );
         res.status(201).json({ id: result.rows[0].id, ...req.body });
     } catch (error) { res.status(500).json({ error: error.message }); }
@@ -176,10 +176,10 @@ app.post('/api/abastecimiento', async (req, res) => {
 app.put('/api/abastecimiento/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { fecha, hora_inicio, hora_fin, sucursal, bultos, estado, responsable, obs, tipo, fecha2, hora_inicio2, hora_fin2, controlador, ctrl_items, ctrl_unidades } = req.body;
+        const { fecha, hora_inicio, hora_fin, sucursal, bultos, estado, responsable, obs, tipo, fecha2, hora_inicio2, hora_fin2, controlador, ctrl_items, ctrl_fecha_inicio, ctrl_fecha_fin, ctrl_hora_inicio, ctrl_hora_fin } = req.body;
         await db.query(
-            `UPDATE abastecimiento SET fecha=$1, hora_inicio=$2, hora_fin=$3, sucursal=$4, bultos=$5, estado=$6, responsable=$7, obs=$8, tipo=$9, fecha2=$10, hora_inicio2=$11, hora_fin2=$12, controlador=$13, ctrl_items=$14, ctrl_unidades=$15 WHERE id=$16`,
-            [fecha, hora_inicio, hora_fin, sucursal, bultos, estado, responsable, obs, tipo||'Pedido', fecha2||'', hora_inicio2||'', hora_fin2||'', controlador||'', parseInt(ctrl_items)||0, parseInt(ctrl_unidades)||0, id]
+            `UPDATE abastecimiento SET fecha=$1, hora_inicio=$2, hora_fin=$3, sucursal=$4, bultos=$5, estado=$6, responsable=$7, obs=$8, tipo=$9, fecha2=$10, hora_inicio2=$11, hora_fin2=$12, controlador=$13, ctrl_items=$14, ctrl_fecha_inicio=$15, ctrl_fecha_fin=$16, ctrl_hora_inicio=$17, ctrl_hora_fin=$18 WHERE id=$19`,
+            [fecha, hora_inicio, hora_fin, sucursal, bultos, estado, responsable, obs, tipo||'Pedido', fecha2||'', hora_inicio2||'', hora_fin2||'', controlador||'', parseInt(ctrl_items)||0, ctrl_fecha_inicio||'', ctrl_fecha_fin||'', ctrl_hora_inicio||'', ctrl_hora_fin||'', id]
         );
         res.json({ success: true });
     } catch (error) { res.status(500).json({ error: error.message }); }
